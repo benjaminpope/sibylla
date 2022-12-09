@@ -1,7 +1,7 @@
 # sibylla
 [![PyPI version](https://badge.fury.io/py/sibylla.svg)](https://badge.fury.io/py/sibylla)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-![integration](https://github.com/benjaminpope/sibylla/actions/workflows/tests.yml/badge.svg)](https://github.com/benjaminpope/sibylla/actions/workflows/tests.yml)
+[![integration](https://github.com/benjaminpope/sibylla/actions/workflows/tests.yml/badge.svg)](https://github.com/benjaminpope/sibylla/actions/workflows/tests.yml)
 [![Documentation](https://github.com/benjaminpope/sibylla/actions/workflows/documentation.yml/badge.svg)](https://benjaminpope.github.io/sibylla/)
 
 Gradient Descent Image Reconstruction
