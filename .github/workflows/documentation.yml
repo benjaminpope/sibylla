@@ -1,0 +1,38 @@
+# Author: Jordan Dennis 
+# Date: 07/07/2022
+# Title: documentation.yml
+# Description: Automatically generates the docs on a merge.
+
+name: Documentation
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  documentation:
+    runs-on: ubuntu-latest
+    steps: 
+      - name: checkout all
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+
+
+      - name: python install 
+        uses: actions/setup-python@v1
+        with:
+          python-version: 3.10.5
+          architecture: x64
+
+      - name: install environment
+        run: |
+          pip install mkdocs
+          pip install mkdocstrings
+          pip install mkdocstrings[python]
+          pip install mkdocs-material 
+          pip install mkdocs-jupyter
+
+      - name: generate and deploy documentation
+        run: mkdocs gh-deploy -d https://benjaminpope.github.io/sibylla
+
