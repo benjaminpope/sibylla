@@ -1,0 +1,7 @@
+jaxlib
+jax
+numpy
+matplotlib
+astropy
+optax
+numpyro
