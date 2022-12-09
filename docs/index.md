@@ -1,11 +1,16 @@
 # sibylla
+[![PyPI version](https://badge.fury.io/py/sibylla.svg)](https://badge.fury.io/py/sibylla)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+<!-- [![integration](https://github.com/benjaminpope/sibylla/actions/workflows/tests.yml/badge.svg)](https://github.com/benjaminpope/sibylla/actions/workflows/tests.yml) -->
+<!-- [![Documentation](https://github.com/benjaminpope/sibylla/actions/workflows/documentation.yml/badge.svg)](https://benjaminpope.github.io/sibylla/) -->
+
 Gradient Descent Image Reconstruction
 
 Contributors: [Louis Desdoigts](https://github.com/LouisDesdoigts), [Benjamin Pope](https://github.com/benjaminpope)
 
 ## What is sibylla?
 
-sibylla - currently a placeholder - is going to be a one-stop-shop for Jax astronomical regularized image restoration code, built on [zodiax](https://louisdesdoigts.github.io/zodiax/) to be object-oriented and play nicely with both pixel-level optical models in [dLux](https://louisdesdoigts.github.io/dLux/) and (yet to be open-sourced) VLBI modelling.
+sibylla - currently a placeholder - is going to be a one-stop-shop for Jax astronomical image restoration code, built on [zodiax](https://louisdesdoigts.github.io/zodiax/) to be object-oriented and play nicely with both pixel-level optical models in [dLux](https://louisdesdoigts.github.io/dLux/) and (yet to be open-sourced) VLBI modelling.
 
 ## Installation
 
