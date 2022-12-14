@@ -241,3 +241,34 @@ class GatedConvNet(nn.Module):
 
     def __call__(self, x):
         return self.nn(x)
+
+
+# ------------------------------- Multiscale -------------------------------
+
+class SqueezeFlow(nn.Module):
+
+    def __call__(self, z, ldj, rng, reverse=False):
+        B, H, W, C = z.shape
+        if not reverse:
+            # Forward direction: H x W x C => H/2 x W/2 x 4C
+            z = z.reshape(B, H//2, 2, W//2, 2, C)
+            z = z.transpose((0, 1, 3, 2, 4, 5))
+            z = z.reshape(B, H//2, W//2, 4*C)
+        else:
+            # Reverse direction: H/2 x W/2 x 4C => H x W x C
+            z = z.reshape(B, H, W, 2, 2, C//4)
+            z = z.transpose((0, 1, 3, 2, 4, 5))
+            z = z.reshape(B, H*2, W*2, C//4)
+        return z, ldj, rng
+
+class SplitFlow(nn.Module):
+
+    def __call__(self, z, ldj, rng, reverse=False):
+        if not reverse:
+            z, z_split = z.split(2, axis=-1)
+            ldj += jax.scipy.stats.norm.logpdf(z_split).sum(axis=[1,2,3])
+        else:
+            z_split = random.normal(rng, z.shape)
+            z = jnp.concatenate([z, z_split], axis=-1)
+            ldj -= jax.scipy.stats.norm.logpdf(z_split).sum(axis=[1,2,3])
+        return z, ldj, rng

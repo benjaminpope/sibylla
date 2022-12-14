@@ -133,3 +133,6 @@ dmypy.json
 
 # Norm flow model checkpoints
 saved_models
+
+#
+data

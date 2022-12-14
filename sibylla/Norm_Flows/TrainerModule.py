@@ -9,17 +9,18 @@ import os
 import optax
 import jax
 import jax.numpy as np
-import tqdm
+from tqdm import tqdm
+import time
+import json
 
 from torch.utils.tensorboard import SummaryWriter
-import torch.utils.data
 from flax.training import train_state, checkpoints
 
 from DataLoader import DataLoader
 
 
 class TrainerModule:
-    def __init__(self, model_name, train_set, checkpoint_path, flow, lr=1e-3, seed=42):
+    def __init__(self, model_name, train_exmp_loader, train_data_loader, checkpoint_path, flow, lr=1e-3, seed=42):
         super().__init__()
         self.model_name = model_name
         self.lr = lr
@@ -28,9 +29,8 @@ class TrainerModule:
         self.model = flow
         self.checkpoint_path = checkpoint_path
         # Prepare logging
-        self.train_exmp_loader = torch.utils.data.DataLoader(train_set, batch_size=256,
-                                                             shuffle=False, drop_last=False,
-                                                             collate_fn=DataLoader.numpy_collate)
+        self.train_exmp_loader = train_exmp_loader
+        self.train_data_loader = train_data_loader
         self.exmp_imgs = next(iter(self.train_exmp_loader))[0]
         self.log_dir = os.path.join(checkpoint_path, self.model_name)
         self.logger = SummaryWriter(log_dir=self.log_dir)
@@ -125,3 +125,37 @@ class TrainerModule:
     def checkpoint_exists(self):
         # Check whether a pretrained model exist for this autoencoder
         return os.path.isfile(os.path.join(self.checkpoint_path, f'{self.model_name}.ckpt'))
+
+    def train_flow(flow, checkpoint_path, model_name="MNISTFlow"):
+        # TODO: make this a class method
+        # Create a trainer module with specified hyperparameters
+        if model_name == "MNISTFlow":
+            train_set, val_set, test_set = DataLoader.load_MNIST()
+            train_exmp_loader, train_data_loader, \
+                val_loader, test_loader = DataLoader.generate_data_loaders(train_set,
+                                                                           val_set,
+                                                                           test_set)
+        else:
+            raise NotImplementedError()
+
+        trainer = TrainerModule(model_name, train_exmp_loader, train_data_loader, checkpoint_path, flow)
+        if not trainer.checkpoint_exists():  # Skip training if pretrained model exists
+            trainer.train_model(train_data_loader,
+                                val_loader,
+                                num_epochs=200)
+            trainer.load_model()
+            val_bpd = trainer.eval_model(val_loader, testing=True)
+            start_time = time.time()
+            test_bpd = trainer.eval_model(test_loader, testing=True)
+            duration = time.time() - start_time
+            results = {'val': val_bpd,
+                       'test': test_bpd,
+                       'time': duration / len(test_loader) / trainer.model.import_samples}
+        else:
+            trainer.load_model(pretrained=True)
+            with open(os.path.join(TrainerModule.checkpoint_path, f'{trainer.model_name}_results.json'), 'r') as f:
+                results = json.load(f)
+
+        # Bind parameters to model for easier inference
+        trainer.model_bd = trainer.model.bind({'params': trainer.state.params})
+        return trainer, results
