@@ -19,6 +19,7 @@ from urllib.error import HTTPError
 from layers import *
 from DataLoader import DataLoader
 from TrainerModule import TrainerModule
+from flows import ImageFlow
 
 
 def show_imgs(imgs, title=None, row_size=4):

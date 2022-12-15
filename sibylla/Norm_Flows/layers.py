@@ -4,82 +4,18 @@ modified from
 https://uvadlc-notebooks.readthedocs.io/en/latest/tutorial_notebooks/JAX/tutorial11/NF_image_modeling.html
 """
 
-# Standard libraries
 from typing import Sequence
-
-import numpy as np
+import numpy as onp
 
 # JAX
 import jax
-import jax.numpy as jnp
+import jax.numpy as np
 from jax import random
 
 from flax import linen as nn
 
-
-# ------------------------------- Base flow -------------------------------
-
-class ImageFlow(nn.Module):
-    flows: Sequence[nn.Module]  # A list of flows (each a nn.Module) that should be applied on the images.
-    import_samples: int = 8  # Number of importance samples to use during testing (see explanation below).
-
-    def __call__(self, x, rng, testing=False):
-        if not testing:
-            bpd, rng = self._get_likelihood(x, rng)
-        else:
-            # Perform importance sampling during testing => estimate likelihood M times for each image
-            img_ll, rng = self._get_likelihood(x.repeat(self.import_samples, 0), rng, return_ll=True)
-            img_ll = img_ll.reshape(-1, self.import_samples)
-
-            # To average the probabilities, we need to go from log-space to exp, and back to log.
-            # Logsumexp provides us a stable implementation for this
-            img_ll = jax.nn.logsumexp(img_ll, axis=-1) - np.log(self.import_samples)
-
-            # Calculate final bpd
-            bpd = -img_ll * np.log2(np.exp(1)) / np.prod(x.shape[1:])
-            bpd = bpd.mean()
-        return bpd, rng
-
-    def encode(self, imgs, rng):
-        # Given a batch of images, return the latent representation z and ldj of the transformations
-        z, ldj = imgs, jnp.zeros(imgs.shape[0])
-        for flow in self.flows:
-            z, ldj, rng = flow(z, ldj, rng, reverse=False)
-        return z, ldj, rng
-
-    def _get_likelihood(self, imgs, rng, return_ll=False):
-        """
-        Given a batch of images, return the likelihood of those.
-        If return_ll is True, this function returns the log likelihood of the input.
-        Otherwise, the ouptut metric is bits per dimension (scaled negative log likelihood)
-        """
-        z, ldj, rng = self.encode(imgs, rng)
-        log_pz = jax.scipy.stats.norm.logpdf(z).sum(axis=(1, 2, 3))
-        log_px = ldj + log_pz
-        nll = -log_px
-        # Calculating bits per dimension
-        bpd = nll * np.log2(np.exp(1)) / np.prod(imgs.shape[1:])
-        return (bpd.mean() if not return_ll else log_px), rng
-
-    def sample(self, img_shape, rng, z_init=None):
-        """
-        Sample a batch of images from the flow.
-        """
-        # Sample latent representation from prior
-        if z_init is None:
-            rng, normal_rng = random.split(rng)
-            z = random.normal(normal_rng, shape=img_shape)
-        else:
-            z = z_init
-
-        # Transform z to x by inverting the flows
-        ldj = jnp.zeros(img_shape[0])
-        for flow in reversed(self.flows):
-            z, ldj, rng = flow(z, ldj, rng, reverse=True)
-        return z, rng
-
-
 # ------------------------------- Dequantization -------------------------------
+
 
 class Dequantization(nn.Module):
     alpha: float = 1e-5  # Small constant that is used to scale the original input for numerical stability.
@@ -92,9 +28,9 @@ class Dequantization(nn.Module):
         else:
             z, ldj = self.sigmoid(z, ldj, reverse=False)
             z = z * self.quants
-            ldj += np.log(self.quants) * np.prod(z.shape[1:])
-            z = jnp.floor(z)
-            z = jax.lax.clamp(min=0.0, x=z, max=self.quants - 1.0).astype(jnp.int32)
+            ldj += onp.log(self.quants) * onp.prod(z.shape[1:])
+            z = np.floor(z)
+            z = jax.lax.clamp(min=0.0, x=z, max=self.quants - 1.0).astype(np.int32)
         return z, ldj, rng
 
     def sigmoid(self, z, ldj, reverse=False):
@@ -103,22 +39,22 @@ class Dequantization(nn.Module):
             ldj += (-z - 2 * jax.nn.softplus(-z)).sum(axis=[1, 2, 3])
             z = nn.sigmoid(z)
             # Reversing scaling for numerical stability
-            ldj -= np.log(1 - self.alpha) * np.prod(z.shape[1:])
+            ldj -= onp.log(1 - self.alpha) * onp.prod(z.shape[1:])
             z = (z - 0.5 * self.alpha) / (1 - self.alpha)
         else:
             z = z * (1 - self.alpha) + 0.5 * self.alpha  # Scale to prevent boundaries 0 and 1
-            ldj += np.log(1 - self.alpha) * np.prod(z.shape[1:])
-            ldj += (-jnp.log(z) - jnp.log(1 - z)).sum(axis=[1, 2, 3])
-            z = jnp.log(z) - jnp.log(1 - z)
+            ldj += onp.log(1 - self.alpha) * onp.prod(z.shape[1:])
+            ldj += (-np.log(z) - np.log(1 - z)).sum(axis=[1, 2, 3])
+            z = np.log(z) - np.log(1 - z)
         return z, ldj
 
     def dequant(self, z, ldj, rng):
         # Transform discrete values to continuous volumes
-        z = z.astype(jnp.float32)
+        z = z.astype(np.float32)
         rng, uniform_rng = random.split(rng)
         z = z + random.uniform(uniform_rng, z.shape)
         z = z / self.quants
-        ldj -= np.log(self.quants) * np.prod(z.shape[1:])
+        ldj -= onp.log(self.quants) * onp.prod(z.shape[1:])
         return z, ldj, rng
 
 
@@ -126,7 +62,7 @@ class VariationalDequantization(Dequantization):
     var_flows: Sequence[nn.Module] = None  # A list of flow transformations to use for modeling q(u|x)
 
     def dequant(self, z, ldj, rng):
-        z = z.astype(jnp.float32)
+        z = z.astype(np.float32)
         img = (z / 255.0) * 2 - 1  # We condition the flows on x, i.e. the original image
 
         # Prior of u is a uniform distribution as before
@@ -141,7 +77,7 @@ class VariationalDequantization(Dequantization):
 
         # After the flows, apply u as in standard dequantization
         z = (z + deq_noise) / 256.0
-        ldj -= np.log(256.0) * np.prod(z.shape[1:])
+        ldj -= onp.log(256.0) * onp.prod(z.shape[1:])
         return z, ldj, rng
 
 
@@ -150,7 +86,7 @@ class VariationalDequantization(Dequantization):
 
 class CouplingLayer(nn.Module):
     network: nn.Module  # NN to use in the flow for predicting mu and sigma
-    mask: np.ndarray  # Binary mask where 0 denotes that the element should be transformed, and 1 not.
+    mask: onp.ndarray  # Binary mask where 0 denotes that the element should be transformed, and 1 not.
     c_in: int  # Number of input channels
 
     def setup(self):
@@ -172,11 +108,11 @@ class CouplingLayer(nn.Module):
         if orig_img is None:
             nn_out = self.network(z_in)
         else:
-            nn_out = self.network(jnp.concatenate([z_in, orig_img], axis=-1))
+            nn_out = self.network(np.concatenate([z_in, orig_img], axis=-1))
         s, t = nn_out.split(2, axis=-1)
 
         # Stabilize scaling output
-        s_fac = jnp.exp(self.scaling_factor).reshape(1, 1, 1, -1)
+        s_fac = np.exp(self.scaling_factor).reshape(1, 1, 1, -1)
         s = nn.tanh(s / s_fac) * s_fac
 
         # Mask outputs (only transform the second part)
@@ -187,10 +123,10 @@ class CouplingLayer(nn.Module):
         if not reverse:
             # Whether we first shift and then scale, or the other way round,
             # is a design choice, and usually does not have a big impact
-            z = (z + t) * jnp.exp(s)
+            z = (z + t) * np.exp(s)
             ldj += s.sum(axis=[1, 2, 3])
         else:
-            z = (z * jnp.exp(-s)) - t
+            z = (z * np.exp(-s)) - t
             ldj -= s.sum(axis=[1, 2, 3])
 
         return z, ldj, rng
@@ -203,7 +139,7 @@ class ConcatELU(nn.Module):
     """
 
     def __call__(self, x):
-        return jnp.concatenate([nn.elu(x), nn.elu(-x)], axis=-1)
+        return np.concatenate([nn.elu(x), nn.elu(-x)], axis=-1)
 
 
 class GatedConv(nn.Module):
@@ -251,24 +187,25 @@ class SqueezeFlow(nn.Module):
         B, H, W, C = z.shape
         if not reverse:
             # Forward direction: H x W x C => H/2 x W/2 x 4C
-            z = z.reshape(B, H//2, 2, W//2, 2, C)
+            z = z.reshape(B, H // 2, 2, W // 2, 2, C)
             z = z.transpose((0, 1, 3, 2, 4, 5))
-            z = z.reshape(B, H//2, W//2, 4*C)
+            z = z.reshape(B, H // 2, W // 2, 4 * C)
         else:
             # Reverse direction: H/2 x W/2 x 4C => H x W x C
-            z = z.reshape(B, H, W, 2, 2, C//4)
+            z = z.reshape(B, H, W, 2, 2, C // 4)
             z = z.transpose((0, 1, 3, 2, 4, 5))
-            z = z.reshape(B, H*2, W*2, C//4)
+            z = z.reshape(B, H * 2, W * 2, C // 4)
         return z, ldj, rng
+
 
 class SplitFlow(nn.Module):
 
     def __call__(self, z, ldj, rng, reverse=False):
         if not reverse:
             z, z_split = z.split(2, axis=-1)
-            ldj += jax.scipy.stats.norm.logpdf(z_split).sum(axis=[1,2,3])
+            ldj += jax.scipy.stats.norm.logpdf(z_split).sum(axis=[1, 2, 3])
         else:
             z_split = random.normal(rng, z.shape)
-            z = jnp.concatenate([z, z_split], axis=-1)
-            ldj -= jax.scipy.stats.norm.logpdf(z_split).sum(axis=[1,2,3])
+            z = np.concatenate([z, z_split], axis=-1)
+            ldj -= jax.scipy.stats.norm.logpdf(z_split).sum(axis=[1, 2, 3])
         return z, ldj, rng
