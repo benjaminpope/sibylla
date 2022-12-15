@@ -17,6 +17,7 @@ import matplotlib.pyplot as plt
 import urllib.request
 from urllib.error import HTTPError
 from layers import *
+import flows
 from DataLoader import DataLoader
 from TrainerModule import TrainerModule
 # from flows import MultiScaleImageFlow
@@ -81,6 +82,6 @@ if __name__ == "__main__":
 
     print("Creating flow...", end='')
     flow_dict = {"simple": {}, "vardeq": {}, "multiscale": {}}
-    flow = MultiScaleImageFlow()
+    flow = flows.FlowFactory.create_multiscale_flow()
     flow_dict["multiscale"]["model"], flow_dict["multiscale"]["result"] = TrainerModule.train_flow(flow, checkpoint_path, model_name="MNISTFlow_multiscale")
     print("Done!")
