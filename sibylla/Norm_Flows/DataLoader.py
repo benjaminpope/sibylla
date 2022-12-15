@@ -1,13 +1,12 @@
-"""
-Abstract base class to work with data loading
-"""
-
 import torch
 import jax.numpy as np
 from torchvision.datasets import MNIST
 
 
 class DataLoader:
+    """
+    Abstract base class to work with data loading
+    """
     def numpy_collate(batch):
         if isinstance(batch[0], np.ndarray):
             return np.stack(batch)
