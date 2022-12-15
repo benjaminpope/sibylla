@@ -210,9 +210,8 @@ class SplitFlow(nn.Module):
             ldj -= jax.scipy.stats.norm.logpdf(z_split).sum(axis=[1, 2, 3])
         return z, ldj, rng
 
-
-
 # ------------------------------- Masks (abstract class) -------------------------------
+
 
 class FlowMasks:
     def create_checkerboard_mask(h, w, invert=False):
@@ -225,10 +224,8 @@ class FlowMasks:
         return mask
 
     def create_channel_mask(c_in, invert=False):
-        mask = np.concatenate([
-                    np.ones((c_in//2,), dtype=np.float32),
-                    np.zeros((c_in-c_in//2,), dtype=np.float32)
-                ])
+        mask = np.concatenate([np.ones((c_in // 2,), dtype=np.float32),
+                               np.zeros((c_in - c_in // 2,), dtype=np.float32)])
         mask = mask.reshape(1, 1, 1, c_in)
         if invert:
             mask = 1 - mask

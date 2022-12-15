@@ -16,7 +16,6 @@ import matplotlib.pyplot as plt
 
 import urllib.request
 from urllib.error import HTTPError
-from layers import *
 import flows
 from DataLoader import DataLoader
 from TrainerModule import TrainerModule
@@ -43,7 +42,6 @@ def show_imgs(imgs, title=None, row_size=4):
     plt.close()
 
 
-
 if __name__ == "__main__":
     checkpoint_path = "./saved_models/simple_example"
 
@@ -68,9 +66,8 @@ if __name__ == "__main__":
                 urllib.request.urlretrieve(file_url, file_path)
             except HTTPError as e:
                 print("Something went wrong. Please contact the author with the full output including the"
-                    "following error:\n", e)
+                      "following error:\n", e)
     print("Done!")
-
 
     print("Loading dataset...", end='')
     train_set, val_set, test_set = DataLoader.load_MNIST()
@@ -83,5 +80,8 @@ if __name__ == "__main__":
     print("Creating flow...", end='')
     flow_dict = {"simple": {}, "vardeq": {}, "multiscale": {}}
     flow = flows.FlowFactory.create_multiscale_flow()
-    flow_dict["multiscale"]["model"], flow_dict["multiscale"]["result"] = TrainerModule.train_flow(flow, checkpoint_path, model_name="MNISTFlow_multiscale")
+    flow_dict["multiscale"]["model"], \
+        flow_dict["multiscale"]["result"] = TrainerModule.train_flow(flow,
+                                                                     checkpoint_path,
+                                                                     model_name="MNISTFlow_multiscale")
     print("Done!")

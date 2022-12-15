@@ -11,7 +11,6 @@ from flax import linen as nn
 import layers
 
 
-
 # ------------------------------- Base flow -------------------------------
 
 class ImageFlow(nn.Module):
@@ -75,27 +74,32 @@ class ImageFlow(nn.Module):
 
 
 class FlowFactory:
-
     def create_multiscale_flow():
         flow_layers = []
         vardeq_layers = [layers.CouplingLayer(network=layers.GatedConvNet(c_out=2, c_hidden=16),
-                                    mask=layers.FlowMasks.create_checkerboard_mask(h=28, w=28, invert=(i%2==1)),
-                                    c_in=1) for i in range(4)]
+                                              mask=layers.FlowMasks.create_checkerboard_mask(h=28,
+                                                                                             w=28,
+                                                                                             invert=(i % 2 == 1)),
+                                              c_in=1) for i in range(4)]
         flow_layers += [layers.VariationalDequantization(var_flows=vardeq_layers)]
 
         flow_layers += [layers.CouplingLayer(network=layers.GatedConvNet(c_out=2, c_hidden=32),
-                                    mask=layers.FlowMasks.create_checkerboard_mask(h=28, w=28, invert=(i%2==1)),
-                                    c_in=1) for i in range(2)]
+                                             mask=layers.FlowMasks.create_checkerboard_mask(h=28,
+                                                                                            w=28,
+                                                                                            invert=(i % 2 == 1)),
+                                             c_in=1) for i in range(2)]
         flow_layers += [layers.SqueezeFlow()]
         for i in range(2):
             flow_layers += [layers.CouplingLayer(network=layers.GatedConvNet(c_out=8, c_hidden=48),
-                                                 mask=layers.FlowMasks.create_channel_mask(c_in=4, invert=(i % 2 == 1)),
+                                                 mask=layers.FlowMasks.create_channel_mask(c_in=4,
+                                                                                           invert=(i % 2 == 1)),
                                                  c_in=4)]
         flow_layers += [layers.SplitFlow(),
                         layers.SqueezeFlow()]
         for i in range(4):
             flow_layers += [layers.CouplingLayer(network=layers.GatedConvNet(c_out=16, c_hidden=64),
-                                        mask=layers.FlowMasks.create_channel_mask(c_in=8, invert=(i%2==1)),
-                                        c_in=8)]
+                                                 mask=layers.FlowMasks.create_channel_mask(c_in=8,
+                                                                                           invert=(i % 2 == 1)),
+                                                 c_in=8)]
         flow_model = ImageFlow(flow_layers)
         return flow_model
