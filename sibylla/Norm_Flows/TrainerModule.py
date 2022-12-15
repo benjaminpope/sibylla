@@ -129,7 +129,7 @@ class TrainerModule:
     def train_flow(flow, checkpoint_path, model_name="MNISTFlow"):
         # TODO: make this a class method
         # Create a trainer module with specified hyperparameters
-        if model_name == "MNISTFlow":
+        if model_name[0:9] == "MNISTFlow":
             train_set, val_set, test_set = DataLoader.load_MNIST()
             train_exmp_loader, train_data_loader, \
                 val_loader, test_loader = DataLoader.generate_data_loaders(train_set,
@@ -153,7 +153,7 @@ class TrainerModule:
                        'time': duration / len(test_loader) / trainer.model.import_samples}
         else:
             trainer.load_model(pretrained=True)
-            with open(os.path.join(TrainerModule.checkpoint_path, f'{trainer.model_name}_results.json'), 'r') as f:
+            with open(os.path.join(trainer.checkpoint_path, f'{trainer.model_name}_results.json'), 'r') as f:
                 results = json.load(f)
 
         # Bind parameters to model for easier inference
