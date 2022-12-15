@@ -16,6 +16,7 @@ from ModelEvaluator import ModelEvaluator
 
 if __name__ == "__main__":
     checkpoint_path = "./saved_models/simple_example"
+    model_name = "MNISTFlow_multiscale_trained"
 
     # Use pretrained model
     # Github URL where saved models are stored for this tutorial
@@ -52,10 +53,9 @@ if __name__ == "__main__":
     print("Creating flow...", end='')
     flow_dict = {"simple": {}, "vardeq": {}, "multiscale": {}}
     flow = flows.FlowFactory.create_multiscale_flow()
+    trainer = TrainerModule(model_name, train_exmp_loader, train_data_loader, checkpoint_path, flow)
     flow_dict["multiscale"]["model"], \
-        flow_dict["multiscale"]["result"] = TrainerModule.train_flow(flow,
-                                                                     checkpoint_path,
-                                                                     model_name="MNISTFlow_multiscale")
+        flow_dict["multiscale"]["result"] = trainer.train_flow()
     print("Done!")
 
     print("Evalutating flow...", end='')

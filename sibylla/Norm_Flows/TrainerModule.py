@@ -77,7 +77,9 @@ class TrainerModule:
     def train_model(self, train_loader, val_loader, num_epochs=500):
         # Train model for defined number of epochs
         best_eval = 1e6
-        for epoch_idx in tqdm(range(1, num_epochs + 1)):
+        # for epoch_idx in tqdm(range(1, num_epochs + 1)):
+        for epoch_idx in range(1, num_epochs + 1):
+            print(f"Epoch {epoch_idx}")
             self.train_epoch(train_loader, epoch=epoch_idx)
             if epoch_idx % 5 == 0:
                 eval_bpd = self.eval_model(val_loader, testing=False)
@@ -90,7 +92,9 @@ class TrainerModule:
     def train_epoch(self, data_loader, epoch):
         # Train model for one epoch, and log avg loss
         avg_loss = 0.
-        for batch in tqdm(data_loader, leave=False):
+        # for batch in tqdm(data_loader, leave=False):
+        for batch_idx, batch in enumerate(data_loader):
+            print(f"\t batch_idx: {batch_idx}")
             self.state, self.rng, loss = self.train_step(self.state, self.rng, batch)
             avg_loss += loss
         avg_loss /= len(data_loader)
@@ -126,10 +130,10 @@ class TrainerModule:
         # Check whether a pretrained model exist for this autoencoder
         return os.path.isfile(os.path.join(self.checkpoint_path, f'{self.model_name}.ckpt'))
 
-    def train_flow(flow, checkpoint_path, model_name="MNISTFlow"):
+    def train_flow(self):
         # TODO: make this a class method
         # Create a trainer module with specified hyperparameters
-        if model_name[0:9] == "MNISTFlow":
+        if self.model_name[0:9] == "MNISTFlow":
             train_set, val_set, test_set = DataLoader.load_MNIST()
             train_exmp_loader, train_data_loader, \
                 val_loader, test_loader = DataLoader.generate_data_loaders(train_set,
@@ -138,24 +142,23 @@ class TrainerModule:
         else:
             raise NotImplementedError()
 
-        trainer = TrainerModule(model_name, train_exmp_loader, train_data_loader, checkpoint_path, flow)
-        if not trainer.checkpoint_exists():  # Skip training if pretrained model exists
-            trainer.train_model(train_data_loader,
-                                val_loader,
-                                num_epochs=200)
-            trainer.load_model()
-            val_bpd = trainer.eval_model(val_loader, testing=True)
+        if not self.checkpoint_exists():  # Skip training if pretrained model exists
+            self.train_model(train_data_loader,
+                             val_loader,
+                             num_epochs=200)
+            self.load_model()
+            val_bpd = self.eval_model(val_loader, testing=True)
             start_time = time.time()
-            test_bpd = trainer.eval_model(test_loader, testing=True)
+            test_bpd = self.eval_model(test_loader, testing=True)
             duration = time.time() - start_time
             results = {'val': val_bpd,
                        'test': test_bpd,
-                       'time': duration / len(test_loader) / trainer.model.import_samples}
+                       'time': duration / len(test_loader) / self.model.import_samples}
         else:
-            trainer.load_model(pretrained=True)
-            with open(os.path.join(trainer.checkpoint_path, f'{trainer.model_name}_results.json'), 'r') as f:
+            self.load_model(pretrained=True)
+            with open(os.path.join(self.checkpoint_path, f'{self.model_name}_results.json'), 'r') as f:
                 results = json.load(f)
 
         # Bind parameters to model for easier inference
-        trainer.model_bd = trainer.model.bind({'params': trainer.state.params})
-        return trainer, results
+        self.model_bd = self.model.bind({'params': self.state.params})
+        return self, results

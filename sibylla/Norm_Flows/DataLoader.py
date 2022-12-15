@@ -43,7 +43,7 @@ class DataLoader:
                                                         drop_last=False,
                                                         collate_fn=DataLoader.numpy_collate)
         train_data_loader = torch.utils.data.DataLoader(train_set,
-                                                        batch_size=128,
+                                                        batch_size=64,
                                                         shuffle=True,
                                                         drop_last=True,
                                                         collate_fn=DataLoader.numpy_collate,
