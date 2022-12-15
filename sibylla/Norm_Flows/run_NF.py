@@ -19,27 +19,10 @@ from urllib.error import HTTPError
 import flows
 from DataLoader import DataLoader
 from TrainerModule import TrainerModule
+from ModelEvaluator import ModelEvaluator
 # from flows import MultiScaleImageFlow
 
 
-def show_imgs(imgs, title=None, row_size=4):
-    # Form a grid of pictures (we use max. 8 columns)
-    imgs = np.copy(jax.device_get(imgs))
-    num_imgs = imgs.shape[0]
-    is_int = (imgs.dtype == np.int32)
-    nrow = min(num_imgs, row_size)
-    ncol = int(math.ceil(num_imgs / nrow))
-    imgs_torch = torch.from_numpy(onp.array(imgs)).permute(0, 3, 1, 2)
-    imgs = torchvision.utils.make_grid(imgs_torch, nrow=nrow, pad_value=128 if is_int else 0.5)
-    np_imgs = imgs.cpu().numpy()
-    # Plot the grid
-    plt.figure(figsize=(1.5 * nrow, 1.5 * ncol))
-    plt.imshow(np.transpose(np_imgs, (1, 2, 0)), interpolation='nearest')
-    plt.axis('off')
-    if title is not None:
-        plt.title(title)
-    plt.show()
-    plt.close()
 
 
 if __name__ == "__main__":
@@ -84,4 +67,9 @@ if __name__ == "__main__":
         flow_dict["multiscale"]["result"] = TrainerModule.train_flow(flow,
                                                                      checkpoint_path,
                                                                      model_name="MNISTFlow_multiscale")
+    print("Done!")
+
+    print("Evalutating flow...", end='')
+    evaluator = ModelEvaluator(flow_dict["multiscale"]["model"])
+    evaluator.random_sample()
     print("Done!")
