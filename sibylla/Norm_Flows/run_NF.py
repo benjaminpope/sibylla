@@ -5,14 +5,6 @@ refactoring has been done correctly
 """
 
 import os
-import torch
-import torchvision
-import numpy as onp
-
-import jax
-import jax.numpy as np
-import math
-import matplotlib.pyplot as plt
 
 import urllib.request
 from urllib.error import HTTPError
@@ -21,9 +13,6 @@ from DataLoader import DataLoader
 from TrainerModule import TrainerModule
 from ModelEvaluator import ModelEvaluator
 # from flows import MultiScaleImageFlow
-
-
-
 
 if __name__ == "__main__":
     checkpoint_path = "./saved_models/simple_example"
