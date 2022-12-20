@@ -4,15 +4,25 @@ import torch
 import jax
 import jax.numpy as np
 import numpy as onp
+import os
 
 import jax.random as random
 import matplotlib.pyplot as plt
 
 
 class ModelEvaluator:
-    def __init__(self, model, save_figs=True):
+    def __init__(self, model, save_figs=False, save_pth=None):
         self.model = model
+
+        if save_figs is True and save_pth is None:
+            raise ValueError("empty save path not permitted")
+
         self.save_figs = save_figs
+        self.save_pth = save_pth
+
+        self.save_pth = os.path.join(save_pth)
+        if not os.path.exists(self.save_pth):
+            os.mkdir(self.save_pth)
 
     def random_sample(self):
         sample_rng = random.PRNGKey(44)
@@ -22,7 +32,7 @@ class ModelEvaluator:
     def show_imgs(self, imgs, savename='', **kwargs):
         ModelEvaluator.plt_imgs(imgs, kwargs)
         if self.save_figs:
-            plt.savefig()
+            plt.savefig(os.path.join(self.save_pth, savename))
         else:
             plt.show()
             plt.close()
