@@ -9,14 +9,14 @@ import os
 import optax
 import jax
 import jax.numpy as np
-from tqdm import tqdm
+# from tqdm import tqdm
 import time
 import json
 
 from torch.utils.tensorboard import SummaryWriter
 from flax.training import train_state, checkpoints
 
-from DataLoader import DataLoader
+from sibylla.Norm_Flows.data_loaders import ImageDataLoader
 
 
 class TrainerModule:
@@ -134,11 +134,11 @@ class TrainerModule:
         # TODO: make this a class method
         # Create a trainer module with specified hyperparameters
         if self.model_name[0:9] == "MNISTFlow":
-            train_set, val_set, test_set = DataLoader.load_MNIST()
+            train_set, val_set, test_set = ImageDataLoader.load_MNIST()
             train_exmp_loader, train_data_loader, \
-                val_loader, test_loader = DataLoader.generate_data_loaders(train_set,
-                                                                           val_set,
-                                                                           test_set)
+                val_loader, test_loader = ImageDataLoader.generate_data_loaders(train_set,
+                                                                                val_set,
+                                                                                test_set)
         else:
             raise NotImplementedError()
 
@@ -161,4 +161,4 @@ class TrainerModule:
 
         # Bind parameters to model for easier inference
         self.model_bd = self.model.bind({'params': self.state.params})
-        return self, results
+        return self.model_bd, results

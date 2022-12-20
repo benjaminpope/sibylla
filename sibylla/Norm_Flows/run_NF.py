@@ -9,7 +9,7 @@ import os
 import urllib.request
 from urllib.error import HTTPError
 import flows
-from DataLoader import DataLoader
+from sibylla.Norm_Flows.data_loaders import ImageDataLoader
 from TrainerModule import TrainerModule
 from ModelEvaluator import ModelEvaluator
 # from flows import MultiScaleImageFlow
@@ -43,9 +43,9 @@ if __name__ == "__main__":
     print("Done!")
 
     print("Loading dataset...", end='')
-    train_set, val_set, test_set = DataLoader.load_MNIST()
+    train_set, val_set, test_set = ImageDataLoader.load_MNIST()
     train_exmp_loader, train_data_loader, \
-        val_loader, test_loader = DataLoader.generate_data_loaders(train_set, val_set, test_set)
+        val_loader, test_loader = ImageDataLoader.generate_data_loaders(train_set, val_set, test_set)
     print("Done!")
 
     # show_imgs(np.stack([train_set[i][0] for i in range(8)], axis=0))
@@ -59,6 +59,7 @@ if __name__ == "__main__":
     print("Done!")
 
     print("Evalutating flow...", end='')
-    evaluator = ModelEvaluator(flow_dict["multiscale"]["model"])
+    evaluator = ModelEvaluator(flow_dict["multiscale"]["model"], next(iter(train_data_loader))[0])
     evaluator.random_sample()
+    evaluator.standard_interp()
     print("Done!")

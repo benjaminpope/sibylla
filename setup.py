@@ -44,7 +44,7 @@ setuptools.setup(
     },
     
     # package_dir={"": "src"},
-    # packages=["sibylla"],
+    packages=["sibylla", "sibylla/Norm_Flows"],
     
     install_requires=install_requires,
     
@@ -54,5 +54,4 @@ setuptools.setup(
     ],
 
     # packages = ["src"] + setuptools.find_namespace_packages(where = "src")
-    packages = ["sibylla"]
 )
