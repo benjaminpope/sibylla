@@ -1,4 +1,3 @@
-
 import math
 import torchvision
 import torch
@@ -11,16 +10,24 @@ import matplotlib.pyplot as plt
 
 
 class ModelEvaluator:
-    def __init__(self, model):
+    def __init__(self, model, save_figs=True):
         self.model = model
+        self.save_figs = save_figs
 
     def random_sample(self):
         sample_rng = random.PRNGKey(44)
         samples, _ = self.model.model_bd.sample(img_shape=[16, 7, 7, 8], rng=sample_rng)
-        ModelEvaluator.show_imgs(samples)
-        plt.title('Random samples from flow')
+        self.show_imgs(samples, title='Random samples from flow')
 
-    def show_imgs(imgs, title=None, row_size=4):
+    def show_imgs(self, imgs, savename='', **kwargs):
+        ModelEvaluator.plt_imgs(imgs, kwargs)
+        if self.save_figs:
+            plt.savefig()
+        else:
+            plt.show()
+            plt.close()
+
+    def plt_imgs(imgs, title=None, row_size=4):
         # Form a grid of pictures (we use max. 8 columns)
         imgs = np.copy(jax.device_get(imgs))
         num_imgs = imgs.shape[0]
@@ -36,5 +43,3 @@ class ModelEvaluator:
         plt.axis('off')
         if title is not None:
             plt.title(title)
-        plt.show()
-        plt.close()
