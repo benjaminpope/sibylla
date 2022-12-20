@@ -103,3 +103,17 @@ class FlowFactory:
                                                  c_in=8)]
         flow_model = ImageFlow(flow_layers)
         return flow_model
+
+    def create_split_flow():
+        flow_layers = []
+        vardeq_layers = [layers.CouplingLayer(network=layers.GatedConvNet(c_out=2, c_hidden=16),
+                                              mask=layers.FlowMasks.create_checkerboard_mask(h=28,
+                                                                                             w=28,
+                                                                                             invert=(i % 2 == 1)),
+                                              c_in=1) for i in range(4)]
+        flow_layers += [layers.VariationalDequantization(var_flows=vardeq_layers)]
+
+        flow_layers += [layers.SqueezeFlow(),
+                        layers.SplitFlow()]
+        flow_model = ImageFlow(flow_layers)
+        return flow_model

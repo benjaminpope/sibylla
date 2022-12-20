@@ -53,7 +53,8 @@ class ImageDataLoader:
                                                         drop_last=True,
                                                         collate_fn=ImageDataLoader.numpy_collate,
                                                         num_workers=0)
-                                                        # persistent_workers=True # TODO: add this back in for actual training
+#                                                       # persistent_workers=True
+#                                                       # TODO: add this back in for actual training
         val_loader = torch.utils.data.DataLoader(val_set,
                                                  batch_size=16,
                                                  shuffle=False,

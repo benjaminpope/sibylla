@@ -30,7 +30,7 @@ class ModelEvaluator:
     def random_sample(self):
         sample_rng = random.PRNGKey(44)
         samples, _ = self.model.sample(img_shape=[16, 7, 7, 8], rng=sample_rng)
-        self.show_imgs(samples, title='Random samples from flow')
+        self.show_imgs(samples, savename='random_sample.png',title='Random samples from flow')
 
     def standard_interp(self, save=True, n_imgs=2):
         # interp between some samples
@@ -38,7 +38,7 @@ class ModelEvaluator:
         rng = jax.random.PRNGKey(42)
         for i in range(n_imgs):
             interp_imgs = self._interpolate(rng, self.training_imgs[2 * i], self.training_imgs[2 * i + 1], n_step)
-            self.show_imgs(interp_imgs, row_size=n_step)
+            self.show_imgs(interp_imgs, savename=f'standard_interp_{i}.png', row_size=n_step)
 
     def _interpolate(self, rng, img1, img2, num_steps=8):
         """
