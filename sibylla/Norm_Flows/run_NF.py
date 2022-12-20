@@ -16,7 +16,7 @@ from ModelEvaluator import ModelEvaluator
 
 if __name__ == "__main__":
     checkpoint_path = "./saved_models/simple_example"
-    model_name = "MNISTFlow_multiscale_trained"
+    model_name = "MNISTFlow_multiscale"
 
     # Use pretrained model
     # Github URL where saved models are stored for this tutorial

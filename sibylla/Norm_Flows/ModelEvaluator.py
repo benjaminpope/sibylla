@@ -18,6 +18,7 @@ class ModelEvaluator:
         sample_rng = random.PRNGKey(44)
         samples, _ = self.model.model_bd.sample(img_shape=[16, 7, 7, 8], rng=sample_rng)
         ModelEvaluator.show_imgs(samples)
+        plt.title('Random samples from flow')
 
     def show_imgs(imgs, title=None, row_size=4):
         # Form a grid of pictures (we use max. 8 columns)

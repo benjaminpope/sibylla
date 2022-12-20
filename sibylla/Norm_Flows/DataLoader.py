@@ -25,7 +25,7 @@ class DataLoader:
         dset_path = './data'
         MNIST_kwargs = {'root' : dset_path,
                         'transform' : DataLoader.image_to_numpy,
-                        'download' : False}
+                        'download' : True}
 
         train_dataset = MNIST(train=True, **MNIST_kwargs)
 
