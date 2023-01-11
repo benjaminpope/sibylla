@@ -24,7 +24,6 @@ class mySplitFlow(nn.Module):
             ldj -= jax.scipy.stats.norm.logpdf(z_split).sum(axis=[1, 2, 3])
         return z, z_split, ldj, rng
 
-
 class myImageFlow(nn.Module):
     flows: Sequence[nn.Module]  # A list of flows (each a nn.Module) that should be applied on the images.
     import_samples: int = 8  # Number of importance samples to use during testing (see explanation below).
