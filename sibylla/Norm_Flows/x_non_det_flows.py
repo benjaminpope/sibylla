@@ -29,7 +29,7 @@ class myImageFlow(nn.Module):
     flows: Sequence[nn.Module]  # A list of flows (each a nn.Module) that should be applied on the images.
     import_samples: int = 8  # Number of importance samples to use during testing (see explanation below).
 
-    def __call__(self, x, rng, testing=False):
+    def __call__(self, x, rng=None, testing=False):
         if not testing:
             bpd, rng = self._get_likelihood(x, rng)
         else:
@@ -46,7 +46,7 @@ class myImageFlow(nn.Module):
             bpd = bpd.mean()
         return bpd, rng
 
-    def encode(self, imgs, rng):
+    def encode(self, imgs, rng=None):
         # Given a batch of images, return the latent representation z and ldj of the transformations
         z, z_split, ldj = imgs, [], np.zeros(imgs.shape[0])
         for flow in self.flows:
@@ -54,7 +54,7 @@ class myImageFlow(nn.Module):
         z = np.concatenate([z, z_split], axis=-1)
         return z, ldj, rng
 
-    def _get_likelihood(self, imgs, rng, return_ll=False):
+    def _get_likelihood(self, imgs, rng=None, return_ll=False):
         """
         Given a batch of images, return the likelihood of those.
         If return_ll is True, this function returns the log likelihood of the input.
@@ -68,7 +68,7 @@ class myImageFlow(nn.Module):
         bpd = nll * np.log2(np.exp(1)) / np.prod(np.array(imgs.shape[1:]))
         return (bpd.mean() if not return_ll else log_px), rng
 
-    def sample(self, img_shape, rng, z_init=None):
+    def sample(self, img_shape, rng=None, z_init=None):
         """
         Sample a batch of images from the flow.
         """
