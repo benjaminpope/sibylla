@@ -169,7 +169,6 @@ class myFlowFactory:
                                                                                        invert=(i % 2 == 1)),
                                         c_in=1) for i in range(2)]
         flow_layers += [mySqueezeFlow(),
-                        mySqueezeFlow(),
                         mySplitFlow()]
         flow_model = myImageFlow(flow_layers)
         return flow_model
@@ -242,8 +241,8 @@ if __name__ == "__main__":
     
     
     # now testing sampling
-    sampled_imgs, _ = model.sample([16, 7, 7, 8], rng)
+    sampled_imgs, _ = model.sample([16, 14, 14, 2], rng)
     print(f"Sampled images from UvA model have shape {sampled_imgs.shape}")
     
-    sampled_imgs, _ = mymodel.sample([16, 7, 7, 8], rng)
+    sampled_imgs, _ = mymodel.sample([16, 14, 14, 2], rng)
     print(f"Sampled images from custom model have shape {sampled_imgs.shape}")

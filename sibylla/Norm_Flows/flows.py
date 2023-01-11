@@ -114,7 +114,6 @@ class FlowFactory:
         flow_layers += [layers.VariationalDequantization(var_flows=vardeq_layers)]
 
         flow_layers += [layers.SqueezeFlow(),
-                        layers.SqueezeFlow(),
                         layers.SplitFlow()]
         flow_model = ImageFlow(flow_layers)
         return flow_model
