@@ -22,7 +22,9 @@ class mySplitFlow(nn.Module):
         else:
             z = np.concatenate([z, z_split], axis=-1)
             ldj -= jax.scipy.stats.norm.logpdf(z_split).sum(axis=[1, 2, 3])
+            z_split = []
         return z, z_split, ldj, rng
+
 
 class myImageFlow(nn.Module):
     flows: Sequence[nn.Module]  # A list of flows (each a nn.Module) that should be applied on the images.
@@ -67,7 +69,7 @@ class myImageFlow(nn.Module):
         bpd = nll * np.log2(np.exp(1)) / np.prod(np.array(imgs.shape[1:]))
         return (bpd.mean() if not return_ll else log_px), rng
 
-    def sample(self, img_shape, rng=None, z_init=None):
+    def sample(self, img_shape, rng, z_init=None):
         """
         Sample a batch of images from the flow.
         """
@@ -75,13 +77,14 @@ class myImageFlow(nn.Module):
         if z_init is None:
             rng, normal_rng = random.split(rng)
             z = random.normal(normal_rng, shape=img_shape)
+            z_split = random.normal(normal_rng, shape=img_shape)
         else:
             z = z_init
 
         # Transform z to x by inverting the flows
         ldj = np.zeros(img_shape[0])
         for flow in reversed(self.flows):
-            z, ldj, rng = flow(z, ldj, rng, reverse=True)
+            z, z_split, ldj, rng = flow(z, z_split, ldj, rng, reverse=True)
         return z, rng
 
 
@@ -166,6 +169,7 @@ class myFlowFactory:
                                                                                        invert=(i % 2 == 1)),
                                         c_in=1) for i in range(2)]
         flow_layers += [mySqueezeFlow(),
+                        mySqueezeFlow(),
                         mySplitFlow()]
         flow_model = myImageFlow(flow_layers)
         return flow_model
@@ -222,16 +226,24 @@ if __name__ == "__main__":
     model = flow.bind({'params': params})
     encoding = model.encode(img, rng)[0]
 
-    print(f"Encoded size from normal model {encoding.shape}, size {encoding.size}. Img: {img.shape}, {img.size}")
+    print(f"Encoded size from UvA model {encoding.shape}, size {encoding.size}. Img: {img.shape}, {img.size}")
     
     # now do custom model
     
-    flow = myFlowFactory.create_split_flow()
+    myflow = myFlowFactory.create_split_flow()
     # trainer = TrainerModule(model_name, train_exmp_loader, train_data_loader, checkpoint_path, flow)
     # model, _ = trainer.train_flow()
     rng, init_rng, flow_rng = jax.random.split(rng, 3)
-    params = flow.init(init_rng, exmp_imgs, flow_rng)['params']
+    params = myflow.init(init_rng, exmp_imgs, flow_rng)['params']
     
-    model = flow.bind({'params': params})
-    encoding = model.encode(img, rng)[0]
-    print(f"Encoded size from custom model {encoding.shape}, size {encoding.size}. Img: {img.shape}, {img.size}")
+    mymodel = myflow.bind({'params': params})
+    myencoding = mymodel.encode(img, rng)[0]
+    print(f"Encoded size from custom model {myencoding.shape}, size {myencoding.size}. Img: {img.shape}, {img.size}")
+    
+    
+    # now testing sampling
+    sampled_imgs, _ = model.sample([16, 7, 7, 8], rng)
+    print(f"Sampled images from UvA model have shape {sampled_imgs.shape}")
+    
+    sampled_imgs, _ = mymodel.sample([16, 7, 7, 8], rng)
+    print(f"Sampled images from custom model have shape {sampled_imgs.shape}")

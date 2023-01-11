@@ -30,6 +30,7 @@ class ModelEvaluator:
     def random_sample(self):
         sample_rng = random.PRNGKey(44)
         samples, _ = self.model.sample(img_shape=[16, 7, 7, 8], rng=sample_rng)
+        print(f"Samples have shape {samples.shape}")
         self.show_imgs(samples, savename='random_sample.png',title='Random samples from flow')
 
     def standard_interp(self, save=True, n_imgs=2):
