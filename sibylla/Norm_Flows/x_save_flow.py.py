@@ -16,9 +16,9 @@ import tensorflow_datasets as tfds
 
 
 
-flags.DEFINE_integer("flow_num_layers", 8,
+flags.DEFINE_integer("flow_num_layers", 12,
                      "Number of layers to use in the flow.")
-flags.DEFINE_integer("mlp_num_layers", 2,
+flags.DEFINE_integer("mlp_num_layers", 3,
                      "Number of layers to use in the MLP conditioner.")
 flags.DEFINE_integer("hidden_size", 500, "Hidden size of the MLP conditioner.")
 flags.DEFINE_integer("num_bins", 4,
@@ -26,8 +26,8 @@ flags.DEFINE_integer("num_bins", 4,
 flags.DEFINE_integer("batch_size", 128,
                      "Batch size for training and evaluation.")
 flags.DEFINE_float("learning_rate", 1e-4, "Learning rate for the optimizer.")
-flags.DEFINE_integer("training_steps", 100, "Number of training steps to run.")
-flags.DEFINE_integer("eval_frequency", 10, "How often to evaluate the model.")
+flags.DEFINE_integer("training_steps", 10000, "Number of training steps to run.")
+flags.DEFINE_integer("eval_frequency", 100, "How often to evaluate the model.")
 FLAGS = flags.FLAGS
 
 
@@ -202,7 +202,7 @@ def main(_):
 
 
     import pickle
-    with open('test.pickle','w') as f:
+    with open('test.pickle','wb') as f:
         pickle.dump(params, f)
 
     exit()

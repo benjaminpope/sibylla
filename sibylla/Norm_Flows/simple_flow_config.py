@@ -115,7 +115,7 @@ def get_config(dataset_name : str) -> config_dict.ConfigDict:
         constructor=make_flow_model,
         kwargs=dict(
             event_shape=data_shape,
-            num_layers=8,
+            num_layers=12,
             hidden_sizes=[500]*2,
             num_bins=n_bins
         )
