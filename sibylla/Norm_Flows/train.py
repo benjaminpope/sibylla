@@ -30,6 +30,7 @@ import jax.numpy as jnp
 import numpy as np
 import optax
 import tensorflow_datasets as tfds
+import os
 
 import simple_flow_config 
 
@@ -64,8 +65,28 @@ def load_dataset(split: tfds.Split, batch_size: int) -> Iterator[Batch]:
     return iter(tfds.as_numpy(ds))
 
 
+def make_model_path(config):
+    """ Create a folder to save the model in and return the path"""
+    model_path = os.path.join('trained_models', config.model_name)
+    if not os.path.exists(model_path):
+        os.makedirs(model_path)
+    files = os.listdir(model_path)
+    files.sort()
+    if files != []:
+        last_version = files[-1]
+        last_version = last_version[len('version_'):]
+        
+        this_version = int(last_version) + 1
+    else:
+        this_version = 0
+    
+    version_path = os.path.join(model_path, f'version_{this_version}')
+    os.makedirs(version_path)
+    return version_path
+
 
 def main(_):
+    
     system = FLAGS.system
     if True:
         config = simple_flow_config.get_config('MNIST')
@@ -136,22 +157,8 @@ def main(_):
             val_loss = eval_fn(params, next(eval_ds))
             logging.info("STEP: %5d; Validation loss: %.3f", step, val_loss)
             
-    # while step < FLAGS.num_iterations:
-    #     # Training update.
-    #     rng_key, loss_key = jax.random.split(rng_key)
-    #     loss, g = jitted_loss(params, next(train_ds))
-    #     if (step % 50) == 0:
-    #         print(f'Train[{step}]: {loss}')
-    #     updates, opt_state = optimizer.update(g, opt_state, params)
-    #     params = optax.apply_updates(params, updates)
-
-    #     if (step % config.test.test_every) == 0:
-    #         rng_key, val_key = jax.random.split(rng_key)
-    #         metrics = jitted_eval(params, val_key)
-    #         print(f'Valid[{step}]: {metrics}')
-
-    #     step += 1
-
+            if config.eval.save_on_eval:
+                pass
     print('Done')
 
 
