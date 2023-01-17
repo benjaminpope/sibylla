@@ -136,3 +136,4 @@ saved_models
 
 #
 data
+*.pickle
