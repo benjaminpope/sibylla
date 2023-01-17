@@ -31,6 +31,8 @@ import numpy as np
 import optax
 import tensorflow_datasets as tfds
 import os
+import pickle
+import json
 
 import simple_flow_config 
 
@@ -39,7 +41,7 @@ Numeric = Union[Array, float]
 
 flags.DEFINE_enum('system', 'simple_MNIST',
                   ['simple_MNIST'], 'Experiment and dataset to train')
-flags.DEFINE_integer('num_iterations', int(10**2), 'Number of training steps.')
+flags.DEFINE_integer('num_iterations', int(20), 'Number of training steps.')
 
 FLAGS = flags.FLAGS
 
@@ -93,9 +95,8 @@ def main(_):
     else:
         raise KeyError(system)
 
-    # lr_schedule_fn = utils.get_lr_schedule(
-    #     config.train.learning_rate, config.train.learning_rate_decay_steps,
-    #     config.train.learning_rate_decay_factor)
+    save_path = make_model_path(config)
+    
     optimizer = optax.adam(config.train.learning_rate)
     if config.train.max_gradient_norm is not None:
         optimizer = optax.chain(
@@ -159,6 +160,12 @@ def main(_):
             
             if config.eval.save_on_eval:
                 pass
+    
+    print('Saving model')
+    with open(os.path.join(save_path, 'model.pickle'), 'wb') as f:
+        pickle.dump(params, f)
+    with open(os.path.join(save_path, 'config.json'), 'w') as f:
+        json.dump(config.to_json_best_effort(), f)
     print('Done')
 
 

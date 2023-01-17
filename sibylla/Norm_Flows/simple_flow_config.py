@@ -103,6 +103,7 @@ def get_config(dataset_name : str) -> config_dict.ConfigDict:
         raise NotImplementedError("dataset not found")
 
     config = config_dict.ConfigDict()
+    config.model_name = "Simple_flow_" + dataset_name
     config.data_shape = data_shape
     config.model = dict(
         constructor=make_flow_model,
@@ -124,5 +125,6 @@ def get_config(dataset_name : str) -> config_dict.ConfigDict:
     config.eval = dict(
         eval_every=10,
         batch_size=128,
+        save_on_eval=False,
     )
     return config
