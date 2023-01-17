@@ -27,7 +27,7 @@ flags.DEFINE_integer("batch_size", 128,
                      "Batch size for training and evaluation.")
 flags.DEFINE_float("learning_rate", 1e-4, "Learning rate for the optimizer.")
 flags.DEFINE_integer("training_steps", 10000, "Number of training steps to run.")
-flags.DEFINE_integer("eval_frequency", 100, "How often to evaluate the model.")
+flags.DEFINE_integer("eval_frequency", 10, "How often to evaluate the model.")
 FLAGS = flags.FLAGS
 
 
@@ -201,9 +201,9 @@ def main(_):
             logging.info("STEP: %5d; Validation loss: %.3f", step, val_loss)
 
 
-    import pickle
-    with open('test.pickle','wb') as f:
-        pickle.dump(params, f)
+    # import pickle
+    # with open('test.pickle','wb') as f:
+    #     pickle.dump(params, f)
 
     exit()
     # testing

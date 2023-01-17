@@ -14,13 +14,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Energy-based training of a flow model on an atomistic system."""
+"""Trains a normalising flow """
 
 from typing import Callable, Dict, Tuple, Union
 from typing import Any, Iterator, Mapping, Optional, Sequence, Tuple
 
 from absl import app
 from absl import flags
+from absl import logging
 import chex
 import distrax
 import haiku as hk
@@ -28,15 +29,16 @@ import jax
 import jax.numpy as jnp
 import numpy as np
 import optax
+import tensorflow_datasets as tfds
 
-from simple_flow_config import get_config
+import simple_flow_config 
 
 Array = chex.Array
 Numeric = Union[Array, float]
 
 flags.DEFINE_enum('system', 'simple_MNIST',
                   ['simple_MNIST'], 'Experiment and dataset to train')
-flags.DEFINE_integer('num_iterations', int(10**1), 'Number of training steps.')
+flags.DEFINE_integer('num_iterations', int(10**2), 'Number of training steps.')
 
 FLAGS = flags.FLAGS
 
@@ -53,19 +55,27 @@ def prepare_data(batch: Batch, prng_key: Optional[PRNGKey] = None) -> Array:
     return data / 256.  # Normalize pixel values from [0, 256) to [0, 1).
 
 
+def load_dataset(split: tfds.Split, batch_size: int) -> Iterator[Batch]:
+    ds = tfds.load("mnist", split=split, shuffle_files=True)
+    ds = ds.shuffle(buffer_size=10 * batch_size)
+    ds = ds.batch(batch_size)
+    ds = ds.prefetch(buffer_size=5)
+    ds = ds.repeat()
+    return iter(tfds.as_numpy(ds))
+
+
+
 def main(_):
     system = FLAGS.system
     if True:
-        config = get_config('MNIST')
+        config = simple_flow_config.get_config('MNIST')
     else:
         raise KeyError(system)
 
     # lr_schedule_fn = utils.get_lr_schedule(
     #     config.train.learning_rate, config.train.learning_rate_decay_steps,
     #     config.train.learning_rate_decay_factor)
-    optimizer = optax.chain(
-        optax.scale_by_adam(),
-        optax.scale(-1))
+    optimizer = optax.adam(config.train.learning_rate)
     if config.train.max_gradient_norm is not None:
         optimizer = optax.chain(
             optax.clip_by_global_norm(config.train.max_gradient_norm), optimizer)
@@ -74,23 +84,6 @@ def main(_):
         return config.model['constructor'](
             **config.model['kwargs'])
 
-    # def loss_fn():
-    #     """Loss function for training."""
-    #     model = create_model()
-
-    #     loss, stats = _get_loss(
-    #         model=model,
-    #         energy_fn=energy_fn_train,
-    #         beta=state.beta,
-    #         num_samples=config.train.batch_size,
-    #         )
-
-    #     metrics = {
-    #         'loss': loss,
-    #         'energy': jnp.mean(stats['energy']),
-    #         'model_entropy': -jnp.mean(stats['model_log_prob']),
-    #     }
-    #     return loss, metrics
     
     
     @hk.without_apply_rng
@@ -105,39 +98,59 @@ def main(_):
         loss = -jnp.mean(log_prob.apply(params, data))
         return loss
     
+    train_ds = load_dataset(tfds.Split.TRAIN, config.train.batch_size)
+    eval_ds = load_dataset(tfds.Split.TEST, config.eval.batch_size)
 
     print(f'Initialising system {system}')
     rng_key = jax.random.PRNGKey(config.train.seed)
-    init_fn, apply_fn = hk.transform(loss_fn)
-    _, apply_eval_fn = hk.transform(eval_fn)
 
     rng_key, init_key = jax.random.split(rng_key)
-    params = init_fn(init_key)
+    params = log_prob.init(init_key, np.zeros((1, *config.data_shape)))
     opt_state = optimizer.init(params)
 
-    def _loss(params, rng):
-        loss, metrics = apply_fn(params, rng)
-        return loss, metrics
-    jitted_loss = jax.jit(jax.value_and_grad(_loss, has_aux=True))
-    jitted_eval = jax.jit(apply_eval_fn)
+    @jax.jit
+    def update(params: hk.Params,
+                         prng_key: PRNGKey,
+                         opt_state: OptState,
+                         batch: Batch) -> Tuple[hk.Params, OptState]:
+        """Single SGD update step."""
+        grads = jax.grad(loss_fn)(params, prng_key, batch)
+        updates, new_opt_state = optimizer.update(grads, opt_state)
+        new_params = optax.apply_updates(params, updates)
+        return new_params, new_opt_state
+    # jitted_eval = jax.jit(apply_eval_fn)
 
-    step = 0
+    @jax.jit
+    def eval_fn(params: hk.Params, batch: Batch) -> Array:
+        data = prepare_data(batch)  # We don't dequantize during evaluation.
+        loss = -jnp.mean(log_prob.apply(params, data))
+        return loss
+
     print('Beginning of training.')
-    while step < FLAGS.num_iterations:
-        # Training update.
-        rng_key, loss_key = jax.random.split(rng_key)
-        (_, metrics), g = jitted_loss(params, loss_key)
-        if (step % 50) == 0:
-            print(f'Train[{step}]: {metrics}')
-        updates, opt_state = optimizer.update(g, opt_state, params)
-        params = optax.apply_updates(params, updates)
+    
+    for step in range(FLAGS.num_iterations):
+        params, opt_state = update(params, rng_key, opt_state,
+                                                             next(train_ds))
 
-        if (step % config.test.test_every) == 0:
-            rng_key, val_key = jax.random.split(rng_key)
-            metrics = jitted_eval(params, val_key)
-            print(f'Valid[{step}]: {metrics}')
+        if step % config.eval.eval_every == 0:
+            val_loss = eval_fn(params, next(eval_ds))
+            logging.info("STEP: %5d; Validation loss: %.3f", step, val_loss)
+            
+    # while step < FLAGS.num_iterations:
+    #     # Training update.
+    #     rng_key, loss_key = jax.random.split(rng_key)
+    #     loss, g = jitted_loss(params, next(train_ds))
+    #     if (step % 50) == 0:
+    #         print(f'Train[{step}]: {loss}')
+    #     updates, opt_state = optimizer.update(g, opt_state, params)
+    #     params = optax.apply_updates(params, updates)
 
-        step += 1
+    #     if (step % config.test.test_every) == 0:
+    #         rng_key, val_key = jax.random.split(rng_key)
+    #         metrics = jitted_eval(params, val_key)
+    #         print(f'Valid[{step}]: {metrics}')
+
+    #     step += 1
 
     print('Done')
 

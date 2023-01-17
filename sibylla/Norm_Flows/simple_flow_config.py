@@ -14,7 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Config file for a Lennard-Jones system in the solid FCC phase."""
+"""Config file for a simple normalising flow that uses alternating binary mask coupling layers."""
 
 from typing import Any, Iterator, Mapping, Optional, Sequence, Tuple
 import jax.numpy as jnp
@@ -103,14 +103,7 @@ def get_config(dataset_name : str) -> config_dict.ConfigDict:
         raise NotImplementedError("dataset not found")
 
     config = config_dict.ConfigDict()
-    conditioner = dict(
-        constructor=make_conditioner,
-        kwargs=dict(
-            event_shape=data_shape,
-            hidden_sizes=500,
-            num_bijector_params=3*n_bins+1)
-    )
-
+    config.data_shape = data_shape
     config.model = dict(
         constructor=make_flow_model,
         kwargs=dict(
@@ -128,8 +121,8 @@ def get_config(dataset_name : str) -> config_dict.ConfigDict:
         seed=42,
         max_gradient_norm=10000.,
     )
-    config.test = dict(
-        test_every=500,
-        batch_size=2048,
+    config.eval = dict(
+        eval_every=10,
+        batch_size=128,
     )
     return config
