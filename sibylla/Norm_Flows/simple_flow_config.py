@@ -96,7 +96,7 @@ def get_config(dataset_name : str) -> config_dict.ConfigDict:
 
     """
 
-    n_bins = 3
+    n_bins = 4
 
     if dataset_name == "MNIST":
         data_shape = (28, 28, 1)
@@ -111,7 +111,7 @@ def get_config(dataset_name : str) -> config_dict.ConfigDict:
         kwargs=dict(
             event_shape=data_shape,
             num_layers=12,
-            hidden_sizes=[500] * 2,
+            hidden_sizes=[500] * 3,
             num_bins=n_bins
         )
     )

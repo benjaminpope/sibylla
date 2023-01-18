@@ -14,6 +14,7 @@ import optax
 import tensorflow_datasets as tfds
 from ModelStorage import ModelStorage
 
+import matplotlib.pyplot as plt
 import simple_flow_config
 
 Array = chex.Array
@@ -40,7 +41,7 @@ def prepare_data(batch: Batch, prng_key: Optional[PRNGKey] = None) -> Array:
 
 
 def load_dataset(split: tfds.Split, batch_size: int) -> Iterator[Batch]:
-    ds = tfds.load("mnist", split=split, shuffle_files=True)
+    ds = tfds.load("mnist", split=split, shuffle_files=False)
     ds = ds.shuffle(buffer_size=10 * batch_size)
     ds = ds.batch(batch_size)
     ds = ds.prefetch(buffer_size=5)
@@ -78,6 +79,51 @@ def main(_):
         model = create_model()
         return model.bijector.forward(data)
 
+    def display_fwd_inv(params, img):
+        fwd = forward_model.apply(params, img)
+        inv = inverse_model.apply(params, img)
+
+        print(f"Norms of: img {jnp.linalg.norm(img)}, fwd {jnp.linalg.norm(fwd)}, inv {jnp.linalg.norm(inv)}")
+        plt.subplot(131)
+        plt.imshow(img, vmin=0, vmax=1)
+        plt.subplot(132)
+        plt.imshow(fwd, vmin=0, vmax=1)
+        plt.subplot(133)
+        plt.imshow(inv, vmin=0, vmax=1)
+        plt.show()
+    
+    def generate_distance_hist(ds, params, prng_seq):
+        imgs = prepare_data(next(ds), next(prng_seq))
+        fwd = forward_model.apply(params, imgs)
+        distances = np.zeros((imgs.shape[0],))
+        # TODO: optimize
+        for idx in range(fwd.shape[0]):
+            distances[idx] = jnp.linalg.norm(fwd[idx,:,:,:])
+        plt.hist(distances, label="eval")
+        
+        # inverse
+        imgs = 1 - imgs
+        fwd = forward_model.apply(params, imgs)
+        distances = np.zeros((imgs.shape[0],))
+        # TODO: optimize
+        for idx in range(fwd.shape[0]):
+            distances[idx] = jnp.linalg.norm(fwd[idx,:,:,:])
+        plt.hist(distances, label="inverse")
+        
+        # noise
+        noise = jax.random.normal(next(prng_seq), imgs.shape)
+        fwd = forward_model.apply(params, noise)
+        distances = np.zeros((imgs.shape[0],))
+        # TODO: optimize
+        for idx in range(fwd.shape[0]):
+            distances[idx] = jnp.linalg.norm(fwd[idx,:,:,:])
+        print(distances)
+        plt.hist(distances, label="noise")
+        
+        plt.legend()
+        plt.show()
+        
+    
     eval_ds = load_dataset(tfds.Split.TEST, config.eval.batch_size)
 
     # load params
@@ -85,34 +131,13 @@ def main(_):
 
     prng_seq = hk.PRNGSequence(42)
 
-    import matplotlib.pyplot as plt
-    imgs = prepare_data(next(eval_ds), next(prng_seq))
-    img = imgs[0]
 
-    fwd = forward_model.apply(params, img)
-    inv = inverse_model.apply(params, img)
+    # generate_distance_hist(eval_ds, params, prng_seq)
 
-    print(f"Norms of: img {jnp.linalg.norm(img)}, fwd {jnp.linalg.norm(fwd)}, inv {jnp.linalg.norm(inv)}")
-    plt.subplot(131)
-    plt.imshow(img, vmin=0, vmax=1)
-    plt.subplot(132)
-    plt.imshow(fwd, vmin=0, vmax=1)
-    plt.subplot(133)
-    plt.imshow(inv, vmin=0, vmax=1)
-    plt.show()
-
+    img = prepare_data(next(eval_ds), next(prng_seq))[0]
+    display_fwd_inv(params, img)
     noise = jax.random.normal(next(prng_seq), img.shape)
-    fwd = forward_model.apply(params, noise)
-    inv = inverse_model.apply(params, noise)
-
-    print(f"Norms of: noise {jnp.linalg.norm(noise)}, fwd {jnp.linalg.norm(fwd)}, inv {jnp.linalg.norm(inv)}")
-    plt.subplot(131)
-    plt.imshow(noise, vmin=0, vmax=1)
-    plt.subplot(132)
-    plt.imshow(fwd, vmin=0, vmax=1)
-    plt.subplot(133)
-    plt.imshow(inv, vmin=0, vmax=1)
-    plt.show()
+    display_fwd_inv(params, noise)
 
 
 if __name__ == '__main__':
