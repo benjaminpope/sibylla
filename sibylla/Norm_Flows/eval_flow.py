@@ -22,7 +22,7 @@ Numeric = Union[Array, float]
 
 flags.DEFINE_enum('system', 'simple_MNIST',
                   ['simple_MNIST'], 'Experiment and dataset to train')
-flags.DEFINE_integer('num_iterations', int(20), 'Number of training steps.')
+flags.DEFINE_integer('version', -1, 'which version of the model to use')
 
 FLAGS = flags.FLAGS
 
@@ -56,7 +56,7 @@ def main(_):
     else:
         raise KeyError(system)
 
-    save_path = ModelStorage.get_model_path(config)
+    save_path = ModelStorage.get_model_path(config, version=FLAGS.version)
 
     optimizer = optax.adam(config.train.learning_rate)
     if config.train.max_gradient_norm is not None:
