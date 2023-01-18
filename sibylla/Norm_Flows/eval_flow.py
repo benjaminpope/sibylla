@@ -18,6 +18,7 @@ import tensorflow_datasets as tfds
 import os
 import pickle
 import json
+from ModelStorage import ModelStorage
 
 import simple_flow_config 
 
@@ -52,17 +53,6 @@ def load_dataset(split: tfds.Split, batch_size: int) -> Iterator[Batch]:
     return iter(tfds.as_numpy(ds))
 
 
-def get_model_path(config, version=-1):
-    """ Create a folder to save the model in and return the path"""
-    model_path = os.path.join('trained_models', config.model_name)
-    if not os.path.exists(model_path):
-        os.makedirs(model_path)
-    files = os.listdir(model_path)
-    files.sort()
-    target_version = files[version]
-    
-    version_path = os.path.join(model_path, target_version)
-    return version_path
 
 
 def main(_):
@@ -73,7 +63,7 @@ def main(_):
     else:
         raise KeyError(system)
 
-    save_path = get_model_path(config)
+    save_path = ModelStorage.get_model_path(config)
     
     optimizer = optax.adam(config.train.learning_rate)
     if config.train.max_gradient_norm is not None:
