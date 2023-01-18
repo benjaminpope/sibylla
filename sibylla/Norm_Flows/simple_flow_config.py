@@ -16,7 +16,7 @@
 
 """Config file for a simple normalising flow that uses alternating binary mask coupling layers."""
 
-from typing import Any, Iterator, Mapping, Optional, Sequence, Tuple
+from typing import Sequence
 import jax.numpy as jnp
 from ml_collections import config_dict
 import haiku as hk
@@ -24,6 +24,7 @@ import numpy as np
 import distrax
 
 Array = jnp.ndarray
+
 
 def make_conditioner(event_shape: Sequence[int],
                      hidden_sizes: Sequence[int],
@@ -69,7 +70,7 @@ def make_flow_model(event_shape: Sequence[int],
             mask=mask,
             bijector=bijector_fn,
             conditioner=make_conditioner(event_shape, hidden_sizes,
-                                        num_bijector_params))
+                                         num_bijector_params))
         layers.append(layer)
         # Flip the mask after each layer.
         mask = jnp.logical_not(mask)
@@ -87,12 +88,12 @@ def make_flow_model(event_shape: Sequence[int],
 
 def get_config(dataset_name : str) -> config_dict.ConfigDict:
     """Returns the config.
-    
+
     The config stores information about the:
      - model: how to make it, what constructors to make it from etc.
      - dataset: what dataset to use
      - training: hyperparameters
-    
+
     """
 
     n_bins = 3
@@ -110,7 +111,7 @@ def get_config(dataset_name : str) -> config_dict.ConfigDict:
         kwargs=dict(
             event_shape=data_shape,
             num_layers=12,
-            hidden_sizes=[500]*2,
+            hidden_sizes=[500] * 2,
             num_bins=n_bins
         )
     )
