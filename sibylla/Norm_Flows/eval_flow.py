@@ -13,6 +13,9 @@ import numpy as np
 import optax
 import tensorflow_datasets as tfds
 from ModelStorage import ModelStorage
+import torchvision.utils
+import math
+import torch
 
 import matplotlib.pyplot as plt
 import simple_flow_config
@@ -48,7 +51,17 @@ def load_dataset(split: tfds.Split, batch_size: int) -> Iterator[Batch]:
     ds = ds.repeat()
     return iter(tfds.as_numpy(ds))
 
-
+def show_img_grid(imgs, row_size=4):
+    num_imgs = imgs.shape[0]
+    nrow = min(num_imgs, row_size)
+    ncol = int(math.ceil(num_imgs/nrow))
+    imgs_torch = torch.from_numpy(np.array(imgs)).permute(0, 3, 1, 2)
+    imgs = torchvision.utils.make_grid(imgs_torch, nrow=nrow)
+    np_imgs = imgs.cpu().numpy()
+    plt.figure(figsize=(1.5*nrow, 1.5*ncol))
+    plt.imshow(np.transpose(np_imgs, (1,2,0)))
+    plt.axis('off')
+    plt.show()
 
 
 def main(_):
@@ -80,19 +93,19 @@ def main(_):
     def forward_model(data):
         model = create_model()
         return model.bijector.forward(data)
-    
+
     @hk.without_apply_rng
     @hk.transform
-    def sample_model(n_samples):
+    def sample_from_base_distribution(n_samples, prng_key):
         model = create_model()
-        return model.bijector.forward(model.distribution.sample(n_samples))
+        return model.distribution._sample_n(prng_key, n_samples)
 
     @hk.without_apply_rng
     @hk.transform
     def get_base_distribution():
         model = create_model()
         return model.distribution
-
+    
     def display_fwd_inv(params, img):
         fwd = forward_model.apply(params, img)
         inv = inverse_model.apply(params, img)
@@ -100,10 +113,13 @@ def main(_):
         print(f"Norms of: img {jnp.linalg.norm(img)}, fwd {jnp.linalg.norm(fwd)}, inv {jnp.linalg.norm(inv)}")
         plt.subplot(131)
         plt.imshow(img, vmin=0, vmax=1)
+        plt.title('Input image')
         plt.subplot(132)
         plt.imshow(fwd, vmin=0, vmax=1)
+        plt.title('Forward( image )')
         plt.subplot(133)
         plt.imshow(inv, vmin=0, vmax=1)
+        plt.title('Inverse( image )')
         plt.show()
     
     def encode_different_data(train_ds, eval_ds, params, prng_seq):
@@ -120,14 +136,9 @@ def main(_):
         
         return encoded
     
-    def show_samples(params, prng_seq):
-        
-        imgs = sample_model.apply(params, 4)
-        plt.subplot(121)
-        plt.imshow(img, vmin=0, vmax=1)
-        plt.subplot(122)
-        plt.imshow(img, vmin=0, vmax=1)
-    
+    def get_samples(n_samples, params, prng_seq):
+        base_samples = sample_from_base_distribution.apply(params, n_samples, next(prng_seq))
+        return forward_model.apply(params, base_samples)
     
     def show_encoded_hist(train_ds, eval_ds, params, prng_seq, x_scale="distance", norm_x_scale=True):
         """ 
@@ -173,7 +184,13 @@ def main(_):
     # show_samples(params, prng_seq)
 
     # show_encoded_hist(train_ds, eval_ds, params, prng_seq)
-    show_encoded_hist(train_ds, eval_ds, params, prng_seq, x_scale="log_likelihood")
+    # show_encoded_hist(train_ds, eval_ds, params, prng_seq, x_scale="log_likelihood")
+
+    # train_imgs = prepare_data(next(train_ds), next(prng_seq))
+    # show_img_grid(train_imgs[0:8,:,:,:])
+
+    sampled_imgs = get_samples(8, params, prng_seq)
+    show_img_grid(sampled_imgs)
 
     # img = prepare_data(next(eval_ds), next(prng_seq))[0]
     # display_fwd_inv(params, img)

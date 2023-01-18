@@ -31,13 +31,14 @@ import tensorflow_datasets as tfds
 from ModelStorage import ModelStorage
 
 import simple_flow_config
+import simple_flow_config_v2
 
 Array = chex.Array
 Numeric = Union[Array, float]
 
 flags.DEFINE_enum('system', 'simple_MNIST',
                   ['simple_MNIST'], 'Experiment and dataset to train')
-flags.DEFINE_integer('num_iterations', int(50), 'Number of training steps.')
+flags.DEFINE_integer('num_iterations', int(10**4), 'Number of training steps.')
 
 FLAGS = flags.FLAGS
 
@@ -67,7 +68,8 @@ def load_dataset(split: tfds.Split, batch_size: int) -> Iterator[Batch]:
 def main(_):
     system = FLAGS.system
     if True:
-        config = simple_flow_config.get_config('MNIST')
+        # config = simple_flow_config.get_config('MNIST')
+        config = simple_flow_config_v2.get_config('MNIST')
     else:
         raise KeyError(system)
 
@@ -126,11 +128,13 @@ def main(_):
     ModelStorage.save_config(save_path, config)
 
     for step in range(FLAGS.num_iterations):
-        params, opt_state = update(params, rng_key, opt_state, next(train_ds))
+        dset_imgs = next(train_ds)
+        params, opt_state = update(params, rng_key, opt_state, dset_imgs)
 
         if step % config.eval.eval_every == 0:
             val_loss = eval_fn(params, next(eval_ds))
-            logging.info("STEP: %5d; Validation loss: %.3f", step, val_loss)
+            train_loss = loss_fn(params, rng_key, dset_imgs)
+            logging.info("STEP: %5d; Train loss: %.3f; Validation loss: %.3f", step, train_loss, val_loss)
 
             if config.eval.save_on_eval:
                 ModelStorage.save_checkpoint(save_path, step, params)
