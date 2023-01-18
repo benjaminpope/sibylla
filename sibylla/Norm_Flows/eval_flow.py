@@ -87,6 +87,8 @@ def main(_):
         model = create_model()
         return model.bijector.forward(model.distribution.sample(n_samples))
 
+    @hk.without_apply_rng
+    @hk.transform
     def get_base_distribution():
         model = create_model()
         return model.distribution
@@ -135,7 +137,7 @@ def main(_):
             - params: model parameters
             - prng_seq: rng sequence
             - x_scale: "distance" if the histogram should show the distance from the origin,
-                       "liklihood" if the histogram should show the likelihood of the model instead
+                       "log_likelihood" if the histogram should show the likelihood of the encoded image
             - norm_x_scale: if the x scale should be normalised independent of 
         
         """
@@ -143,10 +145,19 @@ def main(_):
         encoded = encode_different_data(train_ds, eval_ds, params, prng_seq)
         
         for dataset, encoded_imgs in encoded.items():
-            distances = np.zeros((encoded_imgs.shape[0],))
-            for idx in range(encoded_imgs.shape[0]):
-                distances[idx] = jnp.linalg.norm(encoded_imgs[idx,:,:,:])
-            plt.hist(distances, label=dataset, **hist_opts)
+            if x_scale == "distance":
+                distances = np.zeros((encoded_imgs.shape[0],))
+                for idx in range(encoded_imgs.shape[0]):
+                    distances[idx] = jnp.linalg.norm(encoded_imgs[idx,:,:,:])
+                plt.hist(distances, label=dataset, **hist_opts)
+            elif x_scale == "log_likelihood":
+                base = get_base_distribution.apply(params)
+                log_likelihoods = np.zeros((encoded_imgs.shape[0],))
+                for idx in range(encoded_imgs.shape[0]):
+                    log_likelihoods[idx] = base.log_prob(encoded_imgs[idx,:,:,:])
+                plt.hist(log_likelihoods, label=dataset, **hist_opts)
+            else:
+                raise ValueError(f"{x_scale} is not a valid entry for x_scale")
 
         plt.legend()
         plt.show()
@@ -161,7 +172,8 @@ def main(_):
 
     # show_samples(params, prng_seq)
 
-    show_encoded_hist(train_ds, eval_ds, params, prng_seq, norm_x_scale=False)
+    # show_encoded_hist(train_ds, eval_ds, params, prng_seq)
+    show_encoded_hist(train_ds, eval_ds, params, prng_seq, x_scale="log_likelihood")
 
     # img = prepare_data(next(eval_ds), next(prng_seq))[0]
     # display_fwd_inv(params, img)
