@@ -16,26 +16,21 @@
 
 """Trains a normalising flow """
 
-from typing import Callable, Dict, Tuple, Union
-from typing import Any, Iterator, Mapping, Optional, Sequence, Tuple
+from typing import Tuple, Union, Any, Iterator, Mapping, Optional
 
 from absl import app
 from absl import flags
 from absl import logging
 import chex
-import distrax
 import haiku as hk
 import jax
 import jax.numpy as jnp
 import numpy as np
 import optax
 import tensorflow_datasets as tfds
-import os
-import pickle
-import json
 from ModelStorage import ModelStorage
 
-import simple_flow_config 
+import simple_flow_config
 
 Array = chex.Array
 Numeric = Union[Array, float]
@@ -50,6 +45,7 @@ Array = jnp.ndarray
 PRNGKey = Array
 Batch = Mapping[str, np.ndarray]
 OptState = Any
+
 
 def prepare_data(batch: Batch, prng_key: Optional[PRNGKey] = None) -> Array:
     data = batch["image"].astype(np.float32)
@@ -68,10 +64,7 @@ def load_dataset(split: tfds.Split, batch_size: int) -> Iterator[Batch]:
     return iter(tfds.as_numpy(ds))
 
 
-
-
 def main(_):
-    
     system = FLAGS.system
     if True:
         config = simple_flow_config.get_config('MNIST')
@@ -79,7 +72,7 @@ def main(_):
         raise KeyError(system)
 
     save_path = ModelStorage.make_model_path(config)
-    
+
     optimizer = optax.adam(config.train.learning_rate)
     if config.train.max_gradient_norm is not None:
         optimizer = optax.chain(
@@ -89,20 +82,18 @@ def main(_):
         return config.model['constructor'](
             **config.model['kwargs'])
 
-    
-    
     @hk.without_apply_rng
     @hk.transform
     def log_prob(data: Array) -> Array:
         model = create_model()
         return model.log_prob(data)
-    
+
     def loss_fn(params: hk.Params, prng_key: PRNGKey, batch: Batch) -> Array:
         data = prepare_data(batch, prng_key)
         # Loss is average negative log likelihood.
         loss = -jnp.mean(log_prob.apply(params, data))
         return loss
-    
+
     train_ds = load_dataset(tfds.Split.TRAIN, config.train.batch_size)
     eval_ds = load_dataset(tfds.Split.TEST, config.eval.batch_size)
 
@@ -115,9 +106,9 @@ def main(_):
 
     @jax.jit
     def update(params: hk.Params,
-                         prng_key: PRNGKey,
-                         opt_state: OptState,
-                         batch: Batch) -> Tuple[hk.Params, OptState]:
+               prng_key: PRNGKey,
+               opt_state: OptState,
+               batch: Batch) -> Tuple[hk.Params, OptState]:
         """Single SGD update step."""
         grads = jax.grad(loss_fn)(params, prng_key, batch)
         updates, new_opt_state = optimizer.update(grads, opt_state)
@@ -133,18 +124,17 @@ def main(_):
 
     print('Beginning of training.')
     ModelStorage.save_config(save_path, config)
-    
+
     for step in range(FLAGS.num_iterations):
-        params, opt_state = update(params, rng_key, opt_state,
-                                                             next(train_ds))
+        params, opt_state = update(params, rng_key, opt_state, next(train_ds))
 
         if step % config.eval.eval_every == 0:
             val_loss = eval_fn(params, next(eval_ds))
             logging.info("STEP: %5d; Validation loss: %.3f", step, val_loss)
-            
+
             if config.eval.save_on_eval:
                 ModelStorage.save_checkpoint(save_path, step, params)
-    
+
     print('Saving model')
     ModelStorage.save_model(save_path, config, params)
     print('Done')
