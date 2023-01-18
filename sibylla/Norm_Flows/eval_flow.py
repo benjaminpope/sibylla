@@ -1,14 +1,11 @@
 """Evaluates a trained flow on data"""
 
 
-from typing import Callable, Dict, Tuple, Union
-from typing import Any, Iterator, Mapping, Optional, Sequence, Tuple
+from typing import Union, Any, Iterator, Mapping, Optional
 
 from absl import app
 from absl import flags
-from absl import logging
 import chex
-import distrax
 import haiku as hk
 import jax
 import jax.numpy as jnp
@@ -17,7 +14,6 @@ import optax
 import tensorflow_datasets as tfds
 import os
 import pickle
-import json
 from ModelStorage import ModelStorage
 
 import simple_flow_config 
