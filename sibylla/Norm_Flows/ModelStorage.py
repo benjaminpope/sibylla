@@ -62,3 +62,8 @@ class ModelStorage(abc.ABC):
                     os.remove(os.path.join(save_path, file))
         with open(os.path.join(save_path, 'model.pickle'), 'wb') as f:
             pickle.dump(params, f)
+    
+    def load_model(save_path):
+        with open(os.path.join(save_path, 'model.pickle'),'rb') as f:
+            params = pickle.load(f)
+        return params
