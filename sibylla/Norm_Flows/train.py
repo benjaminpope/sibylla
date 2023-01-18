@@ -37,7 +37,7 @@ Numeric = Union[Array, float]
 
 flags.DEFINE_enum('system', 'simple_MNIST',
                   ['simple_MNIST'], 'Experiment and dataset to train')
-flags.DEFINE_integer('num_iterations', int(20), 'Number of training steps.')
+flags.DEFINE_integer('num_iterations', int(50), 'Number of training steps.')
 
 FLAGS = flags.FLAGS
 
