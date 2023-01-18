@@ -149,6 +149,8 @@ def main(_):
         return loss
 
     print('Beginning of training.')
+    with open(os.path.join(save_path, 'config.json'), 'w') as f:
+        json.dump(config.to_json_best_effort(), f)
     
     for step in range(FLAGS.num_iterations):
         params, opt_state = update(params, rng_key, opt_state,
@@ -159,13 +161,23 @@ def main(_):
             logging.info("STEP: %5d; Validation loss: %.3f", step, val_loss)
             
             if config.eval.save_on_eval:
-                pass
+                # remove old ckpt
+                for file in os.listdir(save_path):
+                    if file.startswith("model_"):
+                        os.remove(os.path.join(save_path, file))
+                        
+                # save new ckpt
+                with open(os.path.join(save_path, f'model_{step}.pickle'), 'wb') as f:
+                    pickle.dump(params, f)
     
     print('Saving model')
+    if config.eval.save_on_eval:
+        # remove old ckpt
+        for file in os.listdir(save_path):
+            if file.startswith("model_"):
+                os.remove(os.path.join(save_path, file))
     with open(os.path.join(save_path, 'model.pickle'), 'wb') as f:
         pickle.dump(params, f)
-    with open(os.path.join(save_path, 'config.json'), 'w') as f:
-        json.dump(config.to_json_best_effort(), f)
     print('Done')
 
 

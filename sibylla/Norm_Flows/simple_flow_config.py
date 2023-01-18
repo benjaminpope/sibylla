@@ -125,6 +125,6 @@ def get_config(dataset_name : str) -> config_dict.ConfigDict:
     config.eval = dict(
         eval_every=10,
         batch_size=128,
-        save_on_eval=False,
+        save_on_eval=True,
     )
     return config
