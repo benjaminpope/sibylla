@@ -96,7 +96,6 @@ def get_config(dataset_name : str) -> config_dict.ConfigDict:
 
     """
 
-
     if dataset_name == "MNIST":
         data_shape = (28, 28, 1)
     else:
