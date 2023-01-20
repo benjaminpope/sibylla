@@ -58,12 +58,12 @@ def load_dataset(split: tfds.Split, batch_size: int) -> Iterator[Batch]:
 def show_img_grid(imgs, row_size=4):
     num_imgs = imgs.shape[0]
     nrow = min(num_imgs, row_size)
-    ncol = int(math.ceil(num_imgs/nrow))
+    ncol = int(math.ceil(num_imgs / nrow))
     imgs_torch = torch.from_numpy(np.array(imgs)).permute(0, 3, 1, 2)
     imgs = torchvision.utils.make_grid(imgs_torch, nrow=nrow)
     np_imgs = imgs.cpu().numpy()
-    plt.figure(figsize=(1.5*nrow, 1.5*ncol))
-    plt.imshow(np.transpose(np_imgs, (1,2,0)))
+    plt.figure(figsize=(1.5 * nrow, 1.5 * ncol))
+    plt.imshow(np.transpose(np_imgs, (1, 2, 0)))
     plt.axis('off')
     plt.show()
 
@@ -111,7 +111,7 @@ def main(_):
     def get_base_distribution():
         model = create_model()
         return model.distribution
-    
+
     def display_fwd_inv(params, img):
         fwd = forward_model.apply(params, img)
         inv = inverse_model.apply(params, img)
@@ -127,21 +127,21 @@ def main(_):
         plt.imshow(inv, vmin=0, vmax=1)
         plt.title('Inverse( image )')
         plt.show()
-    
+
     def encode_different_data(train_ds, eval_ds, params, prng_seq):
         train_imgs = prepare_data(next(train_ds), next(prng_seq))
         eval_imgs = prepare_data(next(eval_ds), next(prng_seq))
         noise = jax.random.uniform(next(prng_seq), train_imgs.shape)
         inverted = 1 - train_imgs
         encoded = {}
-        
+
         encoded['train'] = inverse_model.apply(params, train_imgs)
         encoded['eval'] = inverse_model.apply(params, eval_imgs)
         encoded['noise'] = inverse_model.apply(params, noise)
         encoded['inverted'] = inverse_model.apply(params, inverted)
-        
+
         return encoded
-    
+
     def get_samples(n_samples, params, prng_seq, draw_from='model'):
         base_samples = sample_from_base_distribution.apply(params, n_samples, next(prng_seq))
         if draw_from == 'base':
@@ -153,9 +153,9 @@ def main(_):
         elif draw_from == 'model_uniform':
             samples = jax.random.uniform(next(prng_seq), base_samples.shape)
             return forward_model.apply(params, samples)
-    
+
     def show_encoded_hist(train_ds, eval_ds, params, prng_seq, x_scale="distance", norm_x_scale=True):
-        """ 
+        """
         Display a histogram showing how the encoded space looks
             - train_ds: training dataset
             - eval_ds: evaluation dataset
@@ -163,32 +163,32 @@ def main(_):
             - prng_seq: rng sequence
             - x_scale: "distance" if the histogram should show the distance from the origin,
                        "log_likelihood" if the histogram should show the likelihood of the encoded image
-            - norm_x_scale: if the x scale should be normalised independent of 
-        
+            - norm_x_scale: if the x scale should be normalised independent of image dimension
+
         """
         hist_opts = {'lw' : 0.1, 'alpha' : 0.7, 'edgecolor' : 'k'}
         encoded = encode_different_data(train_ds, eval_ds, params, prng_seq)
-        
+
         for dataset, encoded_imgs in encoded.items():
             if x_scale == "distance":
                 distances = np.zeros((encoded_imgs.shape[0],))
                 for idx in range(encoded_imgs.shape[0]):
-                    distances[idx] = jnp.linalg.norm(encoded_imgs[idx,:,:,:])
+                    distances[idx] = jnp.linalg.norm(encoded_imgs[idx, :, :, :])
                 plt.hist(distances, label=dataset, **hist_opts)
             elif x_scale == "log_likelihood":
                 base = get_base_distribution.apply(params)
                 log_likelihoods = np.zeros((encoded_imgs.shape[0],))
                 for idx in range(encoded_imgs.shape[0]):
-                    log_likelihoods[idx] = base.log_prob(encoded_imgs[idx,:,:,:])
+                    log_likelihoods[idx] = base.log_prob(encoded_imgs[idx, :, :, :])
                 plt.hist(log_likelihoods, label=dataset, **hist_opts)
             else:
                 raise ValueError(f"{x_scale} is not a valid entry for x_scale")
 
         plt.legend()
         plt.show()
-    
-    train_ds = load_dataset(tfds.Split.TRAIN, config.eval.batch_size)
-    eval_ds = load_dataset(tfds.Split.TEST, config.eval.batch_size)
+
+    # train_ds = load_dataset(tfds.Split.TRAIN, config.eval.batch_size)
+    # eval_ds = load_dataset(tfds.Split.TEST, config.eval.batch_size)
 
     # load params
     params = ModelStorage.load_model(save_path)
