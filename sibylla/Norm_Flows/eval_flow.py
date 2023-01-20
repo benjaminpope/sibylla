@@ -24,9 +24,11 @@ import simple_flow_config_v2
 Array = chex.Array
 Numeric = Union[Array, float]
 
-flags.DEFINE_enum('system', 'simple_MNIST',
-                  ['simple_MNIST'], 'Experiment and dataset to train')
 flags.DEFINE_integer('version', -1, 'which version of the model to use')
+flags.DEFINE_enum('flow_model', 'simple_flow',
+                  ['simple_flow', 'simple_flow_v2'], 'Flow to train')
+flags.DEFINE_enum('dataset', 'MNIST',
+                  ['MNIST'], 'Dataset to train')
 
 FLAGS = flags.FLAGS
 
@@ -52,6 +54,7 @@ def load_dataset(split: tfds.Split, batch_size: int) -> Iterator[Batch]:
     ds = ds.repeat()
     return iter(tfds.as_numpy(ds))
 
+
 def show_img_grid(imgs, row_size=4):
     num_imgs = imgs.shape[0]
     nrow = min(num_imgs, row_size)
@@ -66,12 +69,12 @@ def show_img_grid(imgs, row_size=4):
 
 
 def main(_):
-    system = FLAGS.system
-    if True:
-        # config = simple_flow_config.get_config('MNIST')
-        config = simple_flow_config_v2.get_config('MNIST')
+    if FLAGS.flow_model == "simple_flow":
+        config = simple_flow_config.get_config(FLAGS.dataset)
+    elif FLAGS.flow_model == "simple_flow_v2":
+        config = simple_flow_config_v2.get_config(FLAGS.dataset)
     else:
-        raise KeyError(system)
+        raise KeyError(f'{FLAGS.flow_model} is not implemented!')
 
     print(f"evaluationg the {config.model_name} model, version {FLAGS.version}")
     save_path = ModelStorage.get_model_path(config, version=FLAGS.version)
