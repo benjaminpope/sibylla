@@ -79,8 +79,8 @@ def make_flow_model(event_shape: Sequence[int],
     flow = distrax.Inverse(distrax.Chain(layers))
     base_distribution = distrax.Independent(
         distrax.Normal(
-            loc = np.zeros(event_shape),
-            scale = np.ones(event_shape),),
+            loc=np.zeros(event_shape),
+            scale=np.ones(event_shape),),
         reinterpreted_batch_ndims=len(event_shape))
 
     return distrax.Transformed(base_distribution, flow)
