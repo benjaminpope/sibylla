@@ -30,15 +30,18 @@ import optax
 import tensorflow_datasets as tfds
 from ModelStorage import ModelStorage
 
+# import all configs
 import simple_flow_config
 import simple_flow_config_v2
 
 Array = chex.Array
 Numeric = Union[Array, float]
 
-flags.DEFINE_enum('system', 'simple_MNIST',
-                  ['simple_MNIST'], 'Experiment and dataset to train')
-flags.DEFINE_integer('num_iterations', int(10**4), 'Number of training steps.')
+flags.DEFINE_enum('flow_model', 'simple_flow',
+                  ['simple_flow', 'simple_flow_v2'], 'Flow to train')
+flags.DEFINE_enum('dataset', 'MNIST',
+                  ['MNIST'], 'Dataset to train')
+flags.DEFINE_integer('num_iterations', int(250), 'Number of training steps.')
 
 FLAGS = flags.FLAGS
 
@@ -66,12 +69,12 @@ def load_dataset(split: tfds.Split, batch_size: int) -> Iterator[Batch]:
 
 
 def main(_):
-    system = FLAGS.system
-    if True:
-        # config = simple_flow_config.get_config('MNIST')
-        config = simple_flow_config_v2.get_config('MNIST')
+    if FLAGS.flow_model == "simple_flow":
+        config = simple_flow_config.get_config(FLAGS.dataset)
+    elif FLAGS.flow_model == "simple_flow_v2":
+        config = simple_flow_config_v2.get_config(FLAGS.dataset)
     else:
-        raise KeyError(system)
+        raise KeyError(f'{FLAGS.flow_model} is not implemented!')
 
     save_path = ModelStorage.make_model_path(config)
 
@@ -99,7 +102,7 @@ def main(_):
     train_ds = load_dataset(tfds.Split.TRAIN, config.train.batch_size)
     eval_ds = load_dataset(tfds.Split.TEST, config.eval.batch_size)
 
-    print(f'Initialising system {system}')
+    print(f'Initialising system {FLAGS.flow_model} on dataset {FLAGS.dataset}')
     rng_key = jax.random.PRNGKey(config.train.seed)
 
     rng_key, init_key = jax.random.split(rng_key)
