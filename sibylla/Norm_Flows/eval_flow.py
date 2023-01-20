@@ -19,6 +19,7 @@ import torch
 
 import matplotlib.pyplot as plt
 import simple_flow_config
+import simple_flow_config_v2
 
 Array = chex.Array
 Numeric = Union[Array, float]
@@ -67,10 +68,12 @@ def show_img_grid(imgs, row_size=4):
 def main(_):
     system = FLAGS.system
     if True:
-        config = simple_flow_config.get_config('MNIST')
+        # config = simple_flow_config.get_config('MNIST')
+        config = simple_flow_config_v2.get_config('MNIST')
     else:
         raise KeyError(system)
 
+    print(f"evaluationg the {config.model_name} model, version {FLAGS.version}")
     save_path = ModelStorage.get_model_path(config, version=FLAGS.version)
 
     optimizer = optax.adam(config.train.learning_rate)
@@ -136,9 +139,17 @@ def main(_):
         
         return encoded
     
-    def get_samples(n_samples, params, prng_seq):
+    def get_samples(n_samples, params, prng_seq, draw_from='model'):
         base_samples = sample_from_base_distribution.apply(params, n_samples, next(prng_seq))
-        return forward_model.apply(params, base_samples)
+        if draw_from == 'base':
+            return base_samples
+        elif draw_from == 'model':
+            return forward_model.apply(params, base_samples)
+        elif draw_from == 'uniform':
+            return jax.random.uniform(next(prng_seq), base_samples.shape)
+        elif draw_from == 'model_uniform':
+            samples = jax.random.uniform(next(prng_seq), base_samples.shape)
+            return forward_model.apply(params, samples)
     
     def show_encoded_hist(train_ds, eval_ds, params, prng_seq, x_scale="distance", norm_x_scale=True):
         """ 
@@ -189,7 +200,7 @@ def main(_):
     # train_imgs = prepare_data(next(train_ds), next(prng_seq))
     # show_img_grid(train_imgs[0:8,:,:,:])
 
-    sampled_imgs = get_samples(8, params, prng_seq)
+    sampled_imgs = get_samples(8, params, prng_seq, draw_from='model')
     show_img_grid(sampled_imgs)
 
     # img = prepare_data(next(eval_ds), next(prng_seq))[0]

@@ -17,7 +17,7 @@ class ModelStorage(abc.ABC):
             files.sort()
             target_version = files[version]
         else:
-            target_version = version
+            target_version = f'version_{version}'
         version_path = os.path.join(model_path, target_version)
         return version_path
 
