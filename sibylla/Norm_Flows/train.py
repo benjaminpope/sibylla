@@ -103,8 +103,13 @@ class FlattenAndCast(object):
 
 def main(_):
     # Define our dataset, using torch datasets
+    batch_size=32
     mnist_dataset = MNIST('/tmp/mnist/', download=True, transform=FlattenAndCast())
     training_generator = NumpyLoader(mnist_dataset, batch_size=batch_size, num_workers=0)
+    # print(type(training_generator))
+    # for x, y in training_generator:
+    #    print(x.shape)
+    #    print(y)
     exit()
     if FLAGS.flow_model == "simple_flow":
         config = simple_flow_config.get_config(FLAGS.dataset)

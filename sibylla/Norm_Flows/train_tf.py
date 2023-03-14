@@ -41,7 +41,7 @@ flags.DEFINE_enum('flow_model', 'simple_flow',
                   ['simple_flow', 'simple_flow_v2'], 'Flow to train')
 flags.DEFINE_enum('dataset', 'MNIST',
                   ['MNIST'], 'Dataset to train')
-flags.DEFINE_integer('num_iterations', int(250), 'Number of training steps.')
+flags.DEFINE_integer('num_iterations', int(1e4), 'Number of training steps.')
 
 FLAGS = flags.FLAGS
 
@@ -50,6 +50,7 @@ PRNGKey = Array
 Batch = Mapping[str, np.ndarray]
 OptState = Any
 
+jax.random.PRNGKey(5)
 
 def prepare_data(batch: Batch, prng_key: Optional[PRNGKey] = None) -> Array:
     data = batch["image"].astype(np.float32)
@@ -101,6 +102,9 @@ def main(_):
 
     train_ds = load_dataset(tfds.Split.TRAIN, config.train.batch_size)
     eval_ds = load_dataset(tfds.Split.TEST, config.eval.batch_size)
+
+    print(type(train_ds))
+    print(next(train_ds)['image'].shape)
 
     print(f'Initialising system {FLAGS.flow_model} on dataset {FLAGS.dataset}')
     rng_key = jax.random.PRNGKey(config.train.seed)
