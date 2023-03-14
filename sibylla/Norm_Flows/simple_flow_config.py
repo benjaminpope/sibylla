@@ -116,7 +116,7 @@ def get_config(dataset_name : str) -> config_dict.ConfigDict:
         )
     )
     config.train = dict(
-        batch_size=128,
+        batch_size=32,
         learning_rate=1e-4,
         # learning_rate_decay_steps=[250000, 500000],
         # learning_rate_decay_factor=0.1,
@@ -125,7 +125,7 @@ def get_config(dataset_name : str) -> config_dict.ConfigDict:
     )
     config.eval = dict(
         eval_every=100,
-        batch_size=128,
+        batch_size=32,
         save_on_eval=True,
     )
     return config
