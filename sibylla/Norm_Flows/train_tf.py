@@ -27,8 +27,7 @@ import jax
 import jax.numpy as jnp
 import numpy as np
 import optax
-from torch.utils import data
-from torchvision.datasets import MNIST
+import tensorflow_datasets as tfds
 from ModelStorage import ModelStorage
 
 # import all configs
@@ -60,52 +59,16 @@ def prepare_data(batch: Batch, prng_key: Optional[PRNGKey] = None) -> Array:
     return data / 256.  # Normalize pixel values from [0, 256) to [0, 1).
 
 
-# def load_dataset(split: tfds.Split, batch_size: int) -> Iterator[Batch]:
-#     ds = 
-    # ds = tfds.load("mnist", split=split, shuffle_files=True)
-    # ds = ds.shuffle(buffer_size=10 * batch_size)
-    # ds = ds.batch(batch_size)
-    # ds = ds.prefetch(buffer_size=5)
-    # ds = ds.repeat()
-    # return iter(tfds.as_numpy(ds))
+def load_dataset(split: tfds.Split, batch_size: int) -> Iterator[Batch]:
+    ds = tfds.load("mnist", split=split, shuffle_files=True)
+    ds = ds.shuffle(buffer_size=10 * batch_size)
+    ds = ds.batch(batch_size)
+    ds = ds.prefetch(buffer_size=5)
+    ds = ds.repeat()
+    return iter(tfds.as_numpy(ds))
 
-def numpy_collate(batch):
-  if isinstance(batch[0], np.ndarray):
-    return np.stack(batch)
-  elif isinstance(batch[0], (tuple,list)):
-    transposed = zip(*batch)
-    return [numpy_collate(samples) for samples in transposed]
-  else:
-    return np.array(batch)
-
-class NumpyLoader(data.DataLoader):
-  def __init__(self, dataset, batch_size=1,
-                shuffle=False, sampler=None,
-                batch_sampler=None, num_workers=0,
-                pin_memory=False, drop_last=False,
-                timeout=0, worker_init_fn=None):
-    super(self.__class__, self).__init__(dataset,
-        batch_size=batch_size,
-        shuffle=shuffle,
-        sampler=sampler,
-        batch_sampler=batch_sampler,
-        num_workers=num_workers,
-        collate_fn=numpy_collate,
-        pin_memory=pin_memory,
-        drop_last=drop_last,
-        timeout=timeout,
-        worker_init_fn=worker_init_fn)
-
-
-class FlattenAndCast(object):
-  def __call__(self, pic):
-    return np.ravel(np.array(pic, dtype=jnp.float32))
 
 def main(_):
-    # Define our dataset, using torch datasets
-    mnist_dataset = MNIST('/tmp/mnist/', download=True, transform=FlattenAndCast())
-    training_generator = NumpyLoader(mnist_dataset, batch_size=batch_size, num_workers=0)
-    exit()
     if FLAGS.flow_model == "simple_flow":
         config = simple_flow_config.get_config(FLAGS.dataset)
     elif FLAGS.flow_model == "simple_flow_v2":
