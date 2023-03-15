@@ -21,11 +21,13 @@ import matplotlib.pyplot as plt
 import simple_flow_config
 import simple_flow_config_v2
 
+jax.random.PRNGKey(4)
+
 Array = chex.Array
 Numeric = Union[Array, float]
 
 flags.DEFINE_integer('version', -1, 'which version of the model to use')
-flags.DEFINE_enum('flow_model', 'simple_flow',
+flags.DEFINE_enum('flow_model', 'simple_flow_v2',
                   ['simple_flow', 'simple_flow_v2'], 'Flow to train')
 flags.DEFINE_enum('dataset', 'MNIST',
                   ['MNIST'], 'Dataset to train')
@@ -116,15 +118,21 @@ def main(_):
         fwd = forward_model.apply(params, img)
         inv = inverse_model.apply(params, img)
 
+        imshow_args = {
+             'vmin' : 0, 
+             'vmax' : 1,
+             'cmap' : 'gray'
+        }
+
         print(f"Norms of: img {jnp.linalg.norm(img)}, fwd {jnp.linalg.norm(fwd)}, inv {jnp.linalg.norm(inv)}")
         plt.subplot(131)
-        plt.imshow(img, vmin=0, vmax=1)
+        plt.imshow(img, **imshow_args)
         plt.title('Input image')
         plt.subplot(132)
-        plt.imshow(fwd, vmin=0, vmax=1)
+        plt.imshow(fwd, **imshow_args)
         plt.title('Forward( image )')
         plt.subplot(133)
-        plt.imshow(inv, vmin=0, vmax=1)
+        plt.imshow(inv, **imshow_args)
         plt.title('Inverse( image )')
         plt.show()
 
@@ -188,7 +196,7 @@ def main(_):
         plt.show()
 
     # train_ds = load_dataset(tfds.Split.TRAIN, config.eval.batch_size)
-    # eval_ds = load_dataset(tfds.Split.TEST, config.eval.batch_size)
+    eval_ds = load_dataset(tfds.Split.TEST, config.eval.batch_size)
 
     # load params
     params = ModelStorage.load_model(save_path)
@@ -203,13 +211,14 @@ def main(_):
     # train_imgs = prepare_data(next(train_ds), next(prng_seq))
     # show_img_grid(train_imgs[0:8,:,:,:])
 
-    sampled_imgs = get_samples(8, params, prng_seq, draw_from='model')
-    show_img_grid(sampled_imgs)
+    # sampled_imgs = get_samples(8, params, prng_seq, draw_from='model')
+    # sampled_imgs = get_samples(8, params, prng_seq, draw_from='model_uniform')
+    # show_img_grid(sampled_imgs)
 
-    # img = prepare_data(next(eval_ds), next(prng_seq))[0]
+    img = prepare_data(next(eval_ds), next(prng_seq))[0]
     # display_fwd_inv(params, img)
-    # noise = jax.random.uniform(next(prng_seq), img.shape)
-    # display_fwd_inv(params, noise)
+    noise = jax.random.uniform(next(prng_seq), img.shape)
+    display_fwd_inv(params, noise)
 
 
 if __name__ == '__main__':

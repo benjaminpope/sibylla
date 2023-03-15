@@ -108,8 +108,8 @@ def get_config(dataset_name : str) -> config_dict.ConfigDict:
         constructor=make_flow_model,
         kwargs=dict(
             event_shape=data_shape,
-            num_layers=24,
-            hidden_sizes=[600] * 3,
+            num_layers=16,
+            hidden_sizes=[600] * 2,
             num_bins=8
         )
     )
@@ -122,7 +122,7 @@ def get_config(dataset_name : str) -> config_dict.ConfigDict:
         max_gradient_norm=10000.,
     )
     config.eval = dict(
-        eval_every=100,
+        eval_every=10,
         batch_size=128,
         save_on_eval=True,
     )

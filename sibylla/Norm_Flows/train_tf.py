@@ -37,11 +37,11 @@ import simple_flow_config_v2
 Array = chex.Array
 Numeric = Union[Array, float]
 
-flags.DEFINE_enum('flow_model', 'simple_flow',
+flags.DEFINE_enum('flow_model', 'simple_flow_v2',
                   ['simple_flow', 'simple_flow_v2'], 'Flow to train')
 flags.DEFINE_enum('dataset', 'MNIST',
                   ['MNIST'], 'Dataset to train')
-flags.DEFINE_integer('num_iterations', int(1e4), 'Number of training steps.')
+flags.DEFINE_integer('num_iterations', int(1e2), 'Number of training steps.')
 
 FLAGS = flags.FLAGS
 
