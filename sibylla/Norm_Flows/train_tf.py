@@ -40,7 +40,7 @@ flags.DEFINE_enum('flow_model', 'uniform_base_flow',
                   ['uniform_base_flow'], 'Flow to train')
 flags.DEFINE_enum('dataset', 'MNIST',
                   ['MNIST'], 'Dataset to train')
-flags.DEFINE_integer('num_iterations', int(1e3), 'Number of training steps.')
+flags.DEFINE_integer('num_iterations', int(4e2), 'Number of training steps.')
 
 FLAGS = flags.FLAGS
 
@@ -100,10 +100,9 @@ def main(_):
     train_ds = load_dataset(tfds.Split.TRAIN, config.train.batch_size)
     eval_ds = load_dataset(tfds.Split.TEST, config.eval.batch_size)
 
-    print(type(train_ds))
-    print(next(train_ds)['image'].shape)
+    logging.info(f"Event size: {next(train_ds)['image'].shape}")
 
-    print(f'Initialising system {FLAGS.flow_model} on dataset {FLAGS.dataset}')
+    logging.info(f'Initialising system {FLAGS.flow_model} on dataset {FLAGS.dataset}')
     rng_key = jax.random.PRNGKey(config.train.seed)
 
     rng_key, init_key = jax.random.split(rng_key)
@@ -128,7 +127,7 @@ def main(_):
         loss = -jnp.mean(log_prob.apply(params, data))
         return loss
 
-    print('Beginning of training.')
+    logging.info('Beginning of training...')
     ModelStorage.save_config(save_path, config)
 
     for step in range(FLAGS.num_iterations):

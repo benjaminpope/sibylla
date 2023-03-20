@@ -27,8 +27,8 @@ Array = chex.Array
 Numeric = Union[Array, float]
 
 flags.DEFINE_integer('version', -1, 'which version of the model to use')
-flags.DEFINE_enum('flow_model', 'simple_flow',
-                  ['simple_flow', 'simple_flow_v2'], 'Flow to train')
+flags.DEFINE_enum('flow_model', 'uniform_base_flow',
+                  ['uniform_base_flow'], 'Flow to train')
 flags.DEFINE_enum('dataset', 'MNIST',
                   ['MNIST'], 'Dataset to train')
 
@@ -71,10 +71,8 @@ def show_img_grid(imgs, row_size=4):
 
 
 def main(_):
-    if FLAGS.flow_model == "simple_flow":
+    if FLAGS.flow_model == "uniform_base_flow":
         config = uniform_base_flow_config.get_config(FLAGS.dataset)
-    elif FLAGS.flow_model == "simple_flow_v2":
-        config = simple_flow_config_v2.get_config(FLAGS.dataset)
     else:
         raise KeyError(f'{FLAGS.flow_model} is not implemented!')
 
@@ -218,7 +216,7 @@ def main(_):
 
     img = prepare_data(next(eval_ds), next(prng_seq))[0]
     display_fwd_inv(params, img)
-    noise = jax.random.normal(next(prng_seq), img.shape)
+    noise = jax.random.uniform(next(prng_seq), img.shape)
     display_fwd_inv(params, noise)
 
 
