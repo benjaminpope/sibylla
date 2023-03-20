@@ -18,8 +18,8 @@ import math
 import torch
 
 import matplotlib.pyplot as plt
-import simple_flow_config
-import simple_flow_config_v2
+import sibylla.Norm_Flows.uniform_base_flow_config as uniform_base_flow_config
+
 
 jax.random.PRNGKey(4)
 
@@ -27,7 +27,7 @@ Array = chex.Array
 Numeric = Union[Array, float]
 
 flags.DEFINE_integer('version', -1, 'which version of the model to use')
-flags.DEFINE_enum('flow_model', 'simple_flow_v2',
+flags.DEFINE_enum('flow_model', 'simple_flow',
                   ['simple_flow', 'simple_flow_v2'], 'Flow to train')
 flags.DEFINE_enum('dataset', 'MNIST',
                   ['MNIST'], 'Dataset to train')
@@ -72,7 +72,7 @@ def show_img_grid(imgs, row_size=4):
 
 def main(_):
     if FLAGS.flow_model == "simple_flow":
-        config = simple_flow_config.get_config(FLAGS.dataset)
+        config = uniform_base_flow_config.get_config(FLAGS.dataset)
     elif FLAGS.flow_model == "simple_flow_v2":
         config = simple_flow_config_v2.get_config(FLAGS.dataset)
     else:
@@ -123,6 +123,7 @@ def main(_):
              'vmax' : 1,
              'cmap' : 'gray'
         }
+
 
         print(f"Norms of: img {jnp.linalg.norm(img)}, fwd {jnp.linalg.norm(fwd)}, inv {jnp.linalg.norm(inv)}")
         plt.subplot(131)
@@ -216,8 +217,8 @@ def main(_):
     # show_img_grid(sampled_imgs)
 
     img = prepare_data(next(eval_ds), next(prng_seq))[0]
-    # display_fwd_inv(params, img)
-    noise = jax.random.uniform(next(prng_seq), img.shape)
+    display_fwd_inv(params, img)
+    noise = jax.random.normal(next(prng_seq), img.shape)
     display_fwd_inv(params, noise)
 
 

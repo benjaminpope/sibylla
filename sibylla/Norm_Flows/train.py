@@ -32,8 +32,8 @@ from torchvision.datasets import MNIST
 from ModelStorage import ModelStorage
 
 # import all configs
-import simple_flow_config
-import simple_flow_config_v2
+import sibylla.Norm_Flows.uniform_base_flow_config as uniform_base_flow_config
+
 
 Array = chex.Array
 Numeric = Union[Array, float]
@@ -112,7 +112,7 @@ def main(_):
     #    print(y)
     exit()
     if FLAGS.flow_model == "simple_flow":
-        config = simple_flow_config.get_config(FLAGS.dataset)
+        config = uniform_base_flow_config.get_config(FLAGS.dataset)
     elif FLAGS.flow_model == "simple_flow_v2":
         config = simple_flow_config_v2.get_config(FLAGS.dataset)
     else:

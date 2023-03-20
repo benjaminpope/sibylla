@@ -55,7 +55,7 @@ def make_flow_model(event_shape: Sequence[int],
 
     def bijector_fn(params: Array):
         return distrax.RationalQuadraticSpline(
-            params, range_min=0., range_max=1.)
+            params, range_min=-1., range_max=1.)
 
     # Number of parameters for the rational-quadratic spline:
     # - `num_bins` bin widths
@@ -96,25 +96,27 @@ def get_config(dataset_name : str) -> config_dict.ConfigDict:
 
     """
 
+    n_bins = 4
+
     if dataset_name == "MNIST":
         data_shape = (28, 28, 1)
     else:
         raise NotImplementedError("dataset not found")
 
     config = config_dict.ConfigDict()
-    config.model_name = "simple_flow_v2_" + dataset_name
+    config.model_name = "simple_flow_" + dataset_name
     config.data_shape = data_shape
     config.model = dict(
         constructor=make_flow_model,
         kwargs=dict(
             event_shape=data_shape,
-            num_layers=16,
-            hidden_sizes=[600] * 2,
-            num_bins=8
+            num_layers=12,
+            hidden_sizes=[500] * 3,
+            num_bins=n_bins
         )
     )
     config.train = dict(
-        batch_size=128,
+        batch_size=256,
         learning_rate=1e-4,
         # learning_rate_decay_steps=[250000, 500000],
         # learning_rate_decay_factor=0.1,
@@ -122,8 +124,8 @@ def get_config(dataset_name : str) -> config_dict.ConfigDict:
         max_gradient_norm=10000.,
     )
     config.eval = dict(
-        eval_every=10,
-        batch_size=128,
+        eval_every=100,
+        batch_size=256,
         save_on_eval=True,
     )
     return config
