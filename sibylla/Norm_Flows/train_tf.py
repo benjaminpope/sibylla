@@ -36,11 +36,11 @@ import sibylla.Norm_Flows.uniform_base_flow_config as uniform_base_flow_config
 Array = chex.Array
 Numeric = Union[Array, float]
 
-flags.DEFINE_enum('flow_model', 'simple_flow',
-                  ['simple_flow', 'simple_flow_v2'], 'Flow to train')
+flags.DEFINE_enum('flow_model', 'uniform_base_flow',
+                  ['uniform_base_flow'], 'Flow to train')
 flags.DEFINE_enum('dataset', 'MNIST',
                   ['MNIST'], 'Dataset to train')
-flags.DEFINE_integer('num_iterations', int(1e2), 'Number of training steps.')
+flags.DEFINE_integer('num_iterations', int(1e3), 'Number of training steps.')
 
 FLAGS = flags.FLAGS
 
@@ -69,10 +69,8 @@ def load_dataset(split: tfds.Split, batch_size: int) -> Iterator[Batch]:
 
 
 def main(_):
-    if FLAGS.flow_model == "simple_flow":
+    if FLAGS.flow_model == "uniform_base_flow":
         config = uniform_base_flow_config.get_config(FLAGS.dataset)
-    elif FLAGS.flow_model == "simple_flow_v2":
-        config = simple_flow_config_v2.get_config(FLAGS.dataset)
     else:
         raise KeyError(f'{FLAGS.flow_model} is not implemented!')
 

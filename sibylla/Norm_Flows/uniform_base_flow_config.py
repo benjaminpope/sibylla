@@ -55,7 +55,7 @@ def make_flow_model(event_shape: Sequence[int],
 
     def bijector_fn(params: Array):
         return distrax.RationalQuadraticSpline(
-            params, range_min=-1., range_max=1.)
+            params, range_min=0., range_max=1.)
 
     # Number of parameters for the rational-quadratic spline:
     # - `num_bins` bin widths
@@ -78,9 +78,9 @@ def make_flow_model(event_shape: Sequence[int],
     # We invert the flow so that the `forward` method is called with `log_prob`.
     flow = distrax.Inverse(distrax.Chain(layers))
     base_distribution = distrax.Independent(
-        distrax.Normal(
-            loc=np.zeros(event_shape),
-            scale=np.ones(event_shape),),
+        distrax.Uniform(
+            low=np.zeros(event_shape),
+            high=np.ones(event_shape),),
         reinterpreted_batch_ndims=len(event_shape))
 
     return distrax.Transformed(base_distribution, flow)
@@ -104,7 +104,7 @@ def get_config(dataset_name : str) -> config_dict.ConfigDict:
         raise NotImplementedError("dataset not found")
 
     config = config_dict.ConfigDict()
-    config.model_name = "simple_flow_" + dataset_name
+    config.model_name = "uniform_base_flow" + dataset_name
     config.data_shape = data_shape
     config.model = dict(
         constructor=make_flow_model,
