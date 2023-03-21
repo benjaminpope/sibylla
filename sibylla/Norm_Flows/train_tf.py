@@ -29,6 +29,7 @@ import numpy as np
 import optax
 import tensorflow_datasets as tfds
 from ModelStorage import ModelStorage
+from ImageDataset import ImageDataset, MNIST
 
 # import all configs
 import sibylla.Norm_Flows.uniform_base_flow_config as uniform_base_flow_config
@@ -50,13 +51,6 @@ Batch = Mapping[str, np.ndarray]
 OptState = Any
 
 jax.random.PRNGKey(5)
-
-def prepare_data(batch: Batch, prng_key: Optional[PRNGKey] = None) -> Array:
-    data = batch["image"].astype(np.float32)
-    if prng_key is not None:
-        # Dequantize pixel values {0, 1, ..., 255} with uniform noise [0, 1).
-        data += jax.random.uniform(prng_key, data.shape)
-    return data / 256.  # Normalize pixel values from [0, 256) to [0, 1).
 
 
 def load_dataset(split: tfds.Split, batch_size: int) -> Iterator[Batch]:
@@ -92,7 +86,7 @@ def main(_):
         return model.log_prob(data)
 
     def loss_fn(params: hk.Params, prng_key: PRNGKey, batch: Batch) -> Array:
-        data = prepare_data(batch, prng_key)
+        data = ImageDataset.normalize_dequant_data(batch, prng_key)
         # Loss is average negative log likelihood.
         loss = -jnp.mean(log_prob.apply(params, data))
         return loss
@@ -123,7 +117,7 @@ def main(_):
 
     @jax.jit
     def eval_fn(params: hk.Params, batch: Batch) -> Array:
-        data = prepare_data(batch)  # We don't dequantize during evaluation.
+        data = ImageDataset.normalize_dequant_data(batch)
         loss = -jnp.mean(log_prob.apply(params, data))
         return loss
 

@@ -22,3 +22,8 @@ class TestMNIST():
 
             assert isinstance(ds_loader, types.GeneratorType)
             assert (next(ds_loader)['image'].shape == (batch_size, im_width, im_width, 1))
+            
+            img = next(ds_loader)['image'][0]
+
+            # check that there exists pixels > 1 but less than 256
+            assert (np.logical_and(img > 1, img < 256).any())
