@@ -49,6 +49,7 @@ def make_flow_model(event_shape: Sequence[int],
                     num_bins: int) -> distrax.Transformed:
     """Creates the flow model."""
     # Alternating binary mask.
+    # TODO: make mask into a seperate class for different patterns
     mask = jnp.arange(0, np.prod(event_shape)) % 2
     mask = jnp.reshape(mask, event_shape)
     mask = mask.astype(bool)

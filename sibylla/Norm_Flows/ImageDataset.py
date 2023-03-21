@@ -35,7 +35,13 @@ class ImageDataset(abc.ABC):
             data += jax.random.uniform(prng_key, data.shape)
         return data / 256.  # Normalize pixel values from [0, 256) to [0, 1).
 
-    def get_train_test_iterators(dset_name: str, train_batch_size: int, test_batch_size) -> Iterator[Batch]: 
+    def get_train_test_iterators(dset_name: str, train_batch_size: int, test_batch_size: int) -> Iterator[Batch]:
+        """
+            get the iterators for a dataset
+            dset_name: e.g. 'mnist', see tfds for full list of currently supported
+            train_batch_size: number of images from the train set to use in a batch
+            test_batch_size: number of images from the test set to use in a batch
+        """
         ds_train = tfdsDataset.get_generator(dset_name.lower(), tfds.Split.TRAIN, train_batch_size)
         ds_test  = tfdsDataset.get_generator(dset_name.lower(), tfds.Split.TEST, test_batch_size)
         return ds_train, ds_test
