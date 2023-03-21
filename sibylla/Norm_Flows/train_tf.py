@@ -29,10 +29,11 @@ import numpy as np
 import optax
 import tensorflow_datasets as tfds
 from ModelStorage import ModelStorage
-from ImageDataset import ImageDataset, MNIST
+from ImageDataset import ImageDataset
 
 # import all configs
 import sibylla.Norm_Flows.uniform_base_flow_config as uniform_base_flow_config
+from LearningCurve import LearningCurve
 
 Array = chex.Array
 Numeric = Union[Array, float]
@@ -41,7 +42,7 @@ flags.DEFINE_enum('flow_model', 'uniform_base_flow',
                   ['uniform_base_flow'], 'Flow to train')
 flags.DEFINE_enum('dataset', 'MNIST',
                   ['MNIST'], 'Dataset to train')
-flags.DEFINE_integer('num_iterations', int(4e2), 'Number of training steps.')
+flags.DEFINE_integer('num_iterations', int(100), 'Number of training steps.')
 
 FLAGS = flags.FLAGS
 
@@ -124,6 +125,8 @@ def main(_):
     logging.info('Beginning of training...')
     ModelStorage.save_config(save_path, config)
 
+
+    epochs, train_losses, test_losses = [], [], []
     for step in range(FLAGS.num_iterations):
         dset_imgs = next(train_ds)
         params, opt_state = update(params, rng_key, opt_state, dset_imgs)
@@ -133,13 +136,18 @@ def main(_):
             train_loss = loss_fn(params, rng_key, dset_imgs)
             logging.info("STEP: %5d; Train loss: %.3f; Validation loss: %.3f", step, train_loss, val_loss)
 
+            epochs.append(step)
+            train_losses.append(train_loss)
+            test_losses.append(val_loss)
+
             if config.eval.save_on_eval:
                 ModelStorage.save_checkpoint(save_path, step, params)
 
-    print('Saving model')
+    logging.info('Saving model')
     ModelStorage.save_model(save_path, config, params)
-    print('Done')
-
-
+    curve = LearningCurve(epochs, train_losses, test_losses)
+    curve.save_model_learning(save_path)
+    logging.info('Done')
+    
 if __name__ == '__main__':
     app.run(main)

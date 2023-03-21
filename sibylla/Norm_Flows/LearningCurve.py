@@ -28,6 +28,7 @@ class LearningCurve:
         plt.figure()
         plt.plot(self.epochs, self.train_losses, label='training')
         plt.plot(self.epochs, self.test_losses, label='testing')
+        plt.show()
 
 
     def load_model_learning(save_path):
