@@ -17,23 +17,35 @@ Batch = Mapping[str, np.ndarray]
 OptState = Any
 
 
-class Datasets(abc.ABC):
-    def noralize_dequant_data(batch: Batch, prng_key: Optional[PRNGKey] = None) -> Array:
+class ImageDataset(abc.ABC):
+    @abc.abstractclassmethod
+    def load() -> Iterator[Batch]:
+        pass
+
+    def normalize_dequant_data(batch: Batch, prng_key: Optional[PRNGKey] = None) -> Array:
+        """
+            Normalize and dequantize image data by adding uniform noise if prng_key is not none and converting [0,256) -> [0,1) 
+
+            batch: A batchof images
+        """
         data = batch["image"].astype(np.float32)
         if prng_key is not None:
             # Dequantize pixel values {0, 1, ..., 255} with uniform noise [0, 1).
             data += jax.random.uniform(prng_key, data.shape)
         return data / 256.  # Normalize pixel values from [0, 256) to [0, 1).
 
-    def load_dataset(dset_name : str, **kwargs) -> Iterator[Batch]:
-        if dset_name.lower() == "mnist":
-            return Datasets.load_MNIST(**kwargs)
-        raise NotImplementedError(f'{dset_name} is not an implemented/valid dataset')
 
-    def load_MNIST(split: tfds.Split, batch_size: int) -> Iterator[Batch]:
+
+
+class MNIST(ImageDataset):
+    def load(split: tfds.Split, batch_size: int) -> Iterator[Batch]:
         ds = tfds.load("mnist", split=split, shuffle_files=True)
         ds = ds.shuffle(buffer_size=10 * batch_size)
         ds = ds.batch(batch_size)
         ds = ds.prefetch(buffer_size=5)
         ds = ds.repeat()
         return iter(tfds.as_numpy(ds))
+
+if __name__ == "__main__":
+    print(type(MNIST.load(tfds.Split.TRAIN,12)))
+
