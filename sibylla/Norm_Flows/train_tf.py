@@ -91,8 +91,8 @@ def main(_):
         loss = -jnp.mean(log_prob.apply(params, data))
         return loss
 
-    train_ds = load_dataset(tfds.Split.TRAIN, config.train.batch_size)
-    eval_ds = load_dataset(tfds.Split.TEST, config.eval.batch_size)
+
+    train_ds, eval_ds = ImageDataset.get_train_test_iterators('mnist', config.train.batch_size, config.eval.batch_size)
 
     logging.info(f"Event size: {next(train_ds)['image'].shape}")
 

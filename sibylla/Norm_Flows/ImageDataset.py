@@ -34,8 +34,12 @@ class ImageDataset(abc.ABC):
             data += jax.random.uniform(prng_key, data.shape)
         return data / 256.  # Normalize pixel values from [0, 256) to [0, 1).
 
-
-
+    def get_train_test_iterators(dset_name: str, train_batch_size: int, test_batch_size) -> Iterator[Batch]: 
+        if dset_name.lower() == 'mnist':
+            ds_train = MNIST.load(tfds.Split.TRAIN, train_batch_size)
+            ds_test = MNIST.load(tfds.Split.TEST, test_batch_size)
+            return ds_train, ds_test
+        raise NotImplementedError(f"{dset_name} dataset is not implemented")
 
 class MNIST(ImageDataset):
     def load(split: tfds.Split, batch_size: int) -> Iterator[Batch]:

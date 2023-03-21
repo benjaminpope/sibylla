@@ -20,6 +20,7 @@ import torch
 import matplotlib.pyplot as plt
 import sibylla.Norm_Flows.uniform_base_flow_config as uniform_base_flow_config
 
+from ImageDataset import ImageDataset, MNIST
 
 jax.random.PRNGKey(4)
 
@@ -38,14 +39,6 @@ Array = jnp.ndarray
 PRNGKey = Array
 Batch = Mapping[str, np.ndarray]
 OptState = Any
-
-
-def prepare_data(batch: Batch, prng_key: Optional[PRNGKey] = None) -> Array:
-    data = batch["image"].astype(np.float32)
-    if prng_key is not None:
-        # Dequantize pixel values {0, 1, ..., 255} with uniform noise [0, 1).
-        data += jax.random.uniform(prng_key, data.shape)
-    return data / 256.  # Normalize pixel values from [0, 256) to [0, 1).
 
 
 def load_dataset(split: tfds.Split, batch_size: int) -> Iterator[Batch]:
@@ -136,8 +129,8 @@ def main(_):
         plt.show()
 
     def encode_different_data(train_ds, eval_ds, params, prng_seq):
-        train_imgs = prepare_data(next(train_ds), next(prng_seq))
-        eval_imgs = prepare_data(next(eval_ds), next(prng_seq))
+        train_imgs = ImageDataset.normalize_dequant_data(next(train_ds), next(prng_seq))
+        eval_imgs = ImageDataset.normalize_dequant_data(next(eval_ds), next(prng_seq))
         noise = jax.random.uniform(next(prng_seq), train_imgs.shape)
         inverted = 1 - train_imgs
         encoded = {}
@@ -194,8 +187,7 @@ def main(_):
         plt.legend()
         plt.show()
 
-    # train_ds = load_dataset(tfds.Split.TRAIN, config.eval.batch_size)
-    eval_ds = load_dataset(tfds.Split.TEST, config.eval.batch_size)
+    train_ds, eval_ds = ImageDataset.get_train_test_iterators('mnist', config.train.batch_size, config.eval.batch_size)
 
     # load params
     params = ModelStorage.load_model(save_path)
@@ -214,7 +206,7 @@ def main(_):
     # sampled_imgs = get_samples(8, params, prng_seq, draw_from='model_uniform')
     # show_img_grid(sampled_imgs)
 
-    img = prepare_data(next(eval_ds), next(prng_seq))[0]
+    img = ImageDataset.normalize_dequant_data(next(eval_ds), next(prng_seq))[0]
     display_fwd_inv(params, img)
     noise = jax.random.uniform(next(prng_seq), img.shape)
     display_fwd_inv(params, noise)
