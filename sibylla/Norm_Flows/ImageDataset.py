@@ -39,6 +39,10 @@ class ImageDataset(abc.ABC):
             ds_train = MNIST.load(tfds.Split.TRAIN, train_batch_size)
             ds_test = MNIST.load(tfds.Split.TEST, test_batch_size)
             return ds_train, ds_test
+        elif dset_name.lower() == 'emnist':
+            ds_train = EMNIST.load(tfds.Split.TRAIN, train_batch_size)
+            ds_test = EMNIST.load(tfds.Split.TEST, test_batch_size)
+            return ds_train, ds_test
         raise NotImplementedError(f"{dset_name} dataset is not implemented")
 
 class MNIST(ImageDataset):
@@ -50,6 +54,18 @@ class MNIST(ImageDataset):
         ds = ds.repeat()
         return iter(tfds.as_numpy(ds))
 
+
+
+class EMNIST(ImageDataset):
+    def load(split: tfds.Split, batch_size: int) -> Iterator[Batch]:
+        ds = tfds.load("emnist", split=split, shuffle_files=True)
+        ds = ds.shuffle(buffer_size=10 * batch_size)
+        ds = ds.batch(batch_size)
+        ds = ds.prefetch(buffer_size=5)
+        ds = ds.repeat()
+        return iter(tfds.as_numpy(ds))
+
+
+
 if __name__ == "__main__":
     print(type(MNIST.load(tfds.Split.TRAIN,12)))
-

@@ -131,15 +131,15 @@ def main(_):
         plt.title('Inverse( image )')
         plt.show()
 
-    def encode_different_data(train_ds, eval_ds, params, prng_seq):
-        train_imgs = ImageDataset.normalize_dequant_data(next(train_ds), next(prng_seq))
-        eval_imgs = ImageDataset.normalize_dequant_data(next(eval_ds), next(prng_seq))
-        noise = jax.random.uniform(next(prng_seq), train_imgs.shape)
-        inverted = 1 - train_imgs
+    def encode_different_data(dict_of_ds, params, prng_seq):
         encoded = {}
+        for key, ds in dict_of_ds.items():
+            imgs = ImageDataset.normalize_dequant_data(next(ds), next(prng_seq))
+            encoded[key] = inverse_model.apply(params, imgs)
+        noise = jax.random.uniform(next(prng_seq), imgs.shape)
+        train_imgs = ImageDataset.normalize_dequant_data(next(dict_of_ds['train']), next(prng_seq))
+        inverted = 1 - train_imgs
 
-        encoded['train'] = inverse_model.apply(params, train_imgs)
-        encoded['eval'] = inverse_model.apply(params, eval_imgs)
         encoded['noise'] = inverse_model.apply(params, noise)
         encoded['inverted'] = inverse_model.apply(params, inverted)
 
@@ -157,11 +157,10 @@ def main(_):
             samples = jax.random.uniform(next(prng_seq), base_samples.shape)
             return forward_model.apply(params, samples)
 
-    def show_encoded_hist(train_ds, eval_ds, params, prng_seq, x_scale="distance", norm_x_scale=True):
+    def show_encoded_hist(dict_of_ds, params, prng_seq, x_scale="distance", norm_x_scale=True):
         """
         Display a histogram showing how the encoded space looks
-            - train_ds: training dataset
-            - eval_ds: evaluation dataset
+            - dict_of_ds: a dictionary of dataset generators e.g. {'train': train_ds, 'e_mnist': emnist_ds} 
             - params: model parameters
             - prng_seq: rng sequence
             - x_scale: "distance" if the histogram should show the distance from the origin,
@@ -170,34 +169,25 @@ def main(_):
 
         """
         hist_opts = {'lw' : 0.1, 'alpha' : 0.7, 'edgecolor' : 'k'}
-        encoded = encode_different_data(train_ds, eval_ds, params, prng_seq)
 
-        for dataset, encoded_imgs in encoded.items():
-            if x_scale == "distance":
-                distances = np.zeros((encoded_imgs.shape[0],))
-                for idx in range(encoded_imgs.shape[0]):
-                    distances[idx] = jnp.linalg.norm(encoded_imgs[idx, :, :, :])
-                plt.hist(distances, label=dataset, **hist_opts)
-            elif x_scale == "log_likelihood":
+        for ds_name, ds in dict_of_ds.items():
+            imgs = ImageDataset.normalize_dequant_data(next(ds), next(prng_seq))
+            n_imgs = imgs.shape[0]
+            n_imgs = 20
+            log_likelihoods = jax.vmap(log_prob.apply, in_axes=(None, 0))(params, imgs[:n_imgs])
 
-                n_imgs = encoded_imgs.shape[0]
-                n_imgs = 3
-                log_likelihoods = jax.vmap(log_prob.apply, in_axes=(None, 0))(params, encoded_imgs[:n_imgs])
-
-                # TODO vmap this?
-                # n_imgs = encoded_imgs.shape[0]
-                # log_likelihoods = np.zeros((n_imgs,))
-                # for idx in range(n_imgs):
-                #     logging.info(f"{idx}")
-                #     log_likelihoods[idx] = log_prob.apply(params,(encoded_imgs[idx, :, :, :]))
-                plt.hist(log_likelihoods, label=dataset, **hist_opts)
-            else:
-                raise ValueError(f"{x_scale} is not a valid entry for x_scale")
+            plt.hist(log_likelihoods, label=ds_name, **hist_opts)
+        
+        # TODO: make noise and inverted easier to use here...
+        imgs = jax.random.uniform(next(prng_seq), imgs.shape)
+        log_likelihoods = jax.vmap(log_prob.apply, in_axes=(None, 0))(params, imgs[:n_imgs])
+        plt.hist(log_likelihoods, label='noise', **hist_opts)
 
         plt.legend()
         plt.show()
 
     train_ds, eval_ds = ImageDataset.get_train_test_iterators('mnist', config.train.batch_size, config.eval.batch_size)
+    # etrain_ds, _ = ImageDataset.get_train_test_iterators('emnist', config.train.batch_size, config.eval.batch_size)
 
     # load params
     params = ModelStorage.load_model(save_path)
@@ -206,8 +196,12 @@ def main(_):
 
     # show_samples(params, prng_seq)
 
-    # show_encoded_hist(train_ds, eval_ds, params, prng_seq)
-    show_encoded_hist(train_ds, eval_ds, params, prng_seq, x_scale="log_likelihood")
+    # show_encoded_hist(train_ds, eval_ds, params, prng_seq)4
+    dict_of_ds = {
+        'train' : train_ds, 
+        'eval' : eval_ds
+    }
+    show_encoded_hist(dict_of_ds, params, prng_seq, x_scale="log_likelihood")
     exit()
     # train_imgs = prepare_data(next(train_ds), next(prng_seq))
     # show_img_grid(train_imgs[0:8,:,:,:])
@@ -216,10 +210,10 @@ def main(_):
     # sampled_imgs = get_samples(8, params, prng_seq, draw_from='model_uniform')
     # show_img_grid(sampled_imgs)
 
-    img = ImageDataset.normalize_dequant_data(next(eval_ds))[0]
+    img = ImageDataset.normalize_dequant_data(next(eval_ds), next(prng_seq))[0]
     display_fwd_inv(params, img)
-    noise = jax.random.uniform(next(prng_seq), img.shape)
-    display_fwd_inv(params, noise)
+    # noise = jax.random.uniform(next(prng_seq), img.shape)
+    # display_fwd_inv(params, noise)
 
 
 if __name__ == '__main__':
