@@ -5,6 +5,7 @@ from typing import Union, Any, Iterator, Mapping, Optional
 
 from absl import app
 from absl import flags
+from absl import logging
 import chex
 import haiku as hk
 import jax
@@ -69,13 +70,9 @@ def main(_):
     else:
         raise KeyError(f'{FLAGS.flow_model} is not implemented!')
 
-    print(f"evaluationg the {config.model_name} model, version {FLAGS.version}")
+    logging.info(f"evaluating the {config.model_name} model, version {FLAGS.version}")
     save_path = ModelStorage.get_model_path(config, version=FLAGS.version)
 
-    optimizer = optax.adam(config.train.learning_rate)
-    if config.train.max_gradient_norm is not None:
-        optimizer = optax.chain(
-            optax.clip_by_global_norm(config.train.max_gradient_norm), optimizer)
 
     def create_model():
         return config.model['constructor'](
@@ -116,7 +113,7 @@ def main(_):
         }
 
 
-        print(f"Norms of: img {jnp.linalg.norm(img)}, fwd {jnp.linalg.norm(fwd)}, inv {jnp.linalg.norm(inv)}")
+        logging.info(f"Norms of: img {jnp.linalg.norm(img)}, fwd {jnp.linalg.norm(fwd)}, inv {jnp.linalg.norm(inv)}")
         plt.subplot(131)
         plt.imshow(img, **imshow_args)
         plt.title('Input image')
