@@ -102,6 +102,12 @@ def main(_):
         model = create_model()
         return model.distribution
 
+    @hk.without_apply_rng
+    @hk.transform
+    def log_prob(data: Array) -> Array:
+        model = create_model()
+        return model.log_prob(data)
+    
     def display_fwd_inv(params, img):
         fwd = forward_model.apply(params, img)
         inv = inverse_model.apply(params, img)
@@ -173,10 +179,17 @@ def main(_):
                     distances[idx] = jnp.linalg.norm(encoded_imgs[idx, :, :, :])
                 plt.hist(distances, label=dataset, **hist_opts)
             elif x_scale == "log_likelihood":
-                base = get_base_distribution.apply(params)
-                log_likelihoods = np.zeros((encoded_imgs.shape[0],))
-                for idx in range(encoded_imgs.shape[0]):
-                    log_likelihoods[idx] = base.log_prob(encoded_imgs[idx, :, :, :])
+
+                n_imgs = encoded_imgs.shape[0]
+                n_imgs = 3
+                log_likelihoods = jax.vmap(log_prob.apply, in_axes=(None, 0))(params, encoded_imgs[:n_imgs])
+
+                # TODO vmap this?
+                # n_imgs = encoded_imgs.shape[0]
+                # log_likelihoods = np.zeros((n_imgs,))
+                # for idx in range(n_imgs):
+                #     logging.info(f"{idx}")
+                #     log_likelihoods[idx] = log_prob.apply(params,(encoded_imgs[idx, :, :, :]))
                 plt.hist(log_likelihoods, label=dataset, **hist_opts)
             else:
                 raise ValueError(f"{x_scale} is not a valid entry for x_scale")
@@ -194,8 +207,8 @@ def main(_):
     # show_samples(params, prng_seq)
 
     # show_encoded_hist(train_ds, eval_ds, params, prng_seq)
-    # show_encoded_hist(train_ds, eval_ds, params, prng_seq, x_scale="log_likelihood")
-
+    show_encoded_hist(train_ds, eval_ds, params, prng_seq, x_scale="log_likelihood")
+    exit()
     # train_imgs = prepare_data(next(train_ds), next(prng_seq))
     # show_img_grid(train_imgs[0:8,:,:,:])
 
@@ -203,7 +216,7 @@ def main(_):
     # sampled_imgs = get_samples(8, params, prng_seq, draw_from='model_uniform')
     # show_img_grid(sampled_imgs)
 
-    img = ImageDataset.normalize_dequant_data(next(eval_ds), next(prng_seq))[0]
+    img = ImageDataset.normalize_dequant_data(next(eval_ds))[0]
     display_fwd_inv(params, img)
     noise = jax.random.uniform(next(prng_seq), img.shape)
     display_fwd_inv(params, noise)
