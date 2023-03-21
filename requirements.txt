@@ -5,4 +5,5 @@ matplotlib
 astropy
 optax
 numpyro
+tensorflow
 tensorflow_datasets
