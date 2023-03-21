@@ -163,22 +163,26 @@ def main(_):
 
         for ds_name, ds in dict_of_ds.items():
             imgs = ImageDataset.normalize_dequant_data(next(ds), next(prng_seq))
-            n_imgs = imgs.shape[0]
-            n_imgs = 20
-            log_likelihoods = jax.vmap(log_prob.apply, in_axes=(None, 0))(params, imgs[:n_imgs])
+            log_likelihoods = jax.vmap(log_prob.apply, in_axes=(None, 0))(params, imgs)
 
             plt.hist(log_likelihoods, label=ds_name, **hist_opts)
         
-        # TODO: make noise and inverted easier to use here...
+        # compute for noise images
         imgs = jax.random.uniform(next(prng_seq), imgs.shape)
-        log_likelihoods = jax.vmap(log_prob.apply, in_axes=(None, 0))(params, imgs[:n_imgs])
+        log_likelihoods = jax.vmap(log_prob.apply, in_axes=(None, 0))(params, imgs)
         plt.hist(log_likelihoods, label='noise', **hist_opts)
+
+        # inverted training images
+        imgs = ImageDataset.normalize_dequant_data(next(dict_of_ds['train']), next(prng_seq))
+        imgs = 1. - imgs
+        log_likelihoods = jax.vmap(log_prob.apply, in_axes=(None, 0))(params, imgs)
+        plt.hist(log_likelihoods, label='inverted', **hist_opts)
 
         plt.legend()
         plt.show()
 
     train_ds, eval_ds = ImageDataset.get_train_test_iterators('mnist', config.train.batch_size, config.eval.batch_size)
-    # etrain_ds, _ = ImageDataset.get_train_test_iterators('emnist', config.train.batch_size, config.eval.batch_size)
+    etrain_ds, _ = ImageDataset.get_train_test_iterators('emnist', config.train.batch_size, config.eval.batch_size)
 
     # load params
     params = ModelStorage.load_model(save_path)
@@ -190,7 +194,8 @@ def main(_):
     # show_encoded_hist(train_ds, eval_ds, params, prng_seq)4
     dict_of_ds = {
         'train' : train_ds, 
-        'eval' : eval_ds
+        'eval' : eval_ds,
+        'emnist' : etrain_ds
     }
     show_encoded_hist(dict_of_ds, params, prng_seq, x_scale="log_likelihood")
     exit()
