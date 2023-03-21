@@ -10,6 +10,7 @@ import jax.numpy as jnp
 import numpy as np
 
 import tensorflow_datasets as tfds
+import tensorflow as tf
 
 Array = jnp.ndarray
 PRNGKey = Array
@@ -35,30 +36,16 @@ class ImageDataset(abc.ABC):
         return data / 256.  # Normalize pixel values from [0, 256) to [0, 1).
 
     def get_train_test_iterators(dset_name: str, train_batch_size: int, test_batch_size) -> Iterator[Batch]: 
-        if dset_name.lower() == 'mnist':
-            ds_train = MNIST.load(tfds.Split.TRAIN, train_batch_size)
-            ds_test = MNIST.load(tfds.Split.TEST, test_batch_size)
-            return ds_train, ds_test
-        elif dset_name.lower() == 'emnist':
-            ds_train = EMNIST.load(tfds.Split.TRAIN, train_batch_size)
-            ds_test = EMNIST.load(tfds.Split.TEST, test_batch_size)
-            return ds_train, ds_test
-        raise NotImplementedError(f"{dset_name} dataset is not implemented")
+        ds_train = tfdsDataset.get_generator(dset_name.lower(), tfds.Split.TRAIN, train_batch_size)
+        ds_test  = tfdsDataset.get_generator(dset_name.lower(), tfds.Split.TEST, test_batch_size)
+        return ds_train, ds_test
 
-class MNIST(ImageDataset):
-    def load(split: tfds.Split, batch_size: int) -> Iterator[Batch]:
-        ds = tfds.load("mnist", split=split, shuffle_files=True)
-        ds = ds.shuffle(buffer_size=10 * batch_size)
-        ds = ds.batch(batch_size)
-        ds = ds.prefetch(buffer_size=5)
-        ds = ds.repeat()
-        return iter(tfds.as_numpy(ds))
+class tfdsDataset(ImageDataset):
+    def get_ds(name: str, split: tfds.Split) -> tf.data.Dataset:
+        return tfds.load(name, split=split, shuffle_files=True, with_info=True)
 
-
-
-class EMNIST(ImageDataset):
-    def load(split: tfds.Split, batch_size: int) -> Iterator[Batch]:
-        ds = tfds.load("emnist", split=split, shuffle_files=True)
+    def get_generator(name: str, split: tfds.Split, batch_size: int) -> Iterator[Batch]:
+        ds, _ = tfdsDataset.get_ds(name, split)
         ds = ds.shuffle(buffer_size=10 * batch_size)
         ds = ds.batch(batch_size)
         ds = ds.prefetch(buffer_size=5)
@@ -68,4 +55,8 @@ class EMNIST(ImageDataset):
 
 
 if __name__ == "__main__":
-    print(type(MNIST.load(tfds.Split.TRAIN,12)))
+    import matplotlib.pyplot as plt
+    ds, ds_info = tfdsDataset.get_ds('emnist', tfds.Split.TRAIN)
+    print(type(ds))
+    fig = tfds.show_examples(ds, ds_info)
+    plt.show()

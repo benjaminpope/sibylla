@@ -20,8 +20,7 @@ import torch
 
 import matplotlib.pyplot as plt
 import sibylla.Norm_Flows.uniform_base_flow_config as uniform_base_flow_config
-
-from ImageDataset import ImageDataset, MNIST
+from ImageDataset import ImageDataset
 
 jax.random.PRNGKey(4)
 
@@ -41,14 +40,6 @@ PRNGKey = Array
 Batch = Mapping[str, np.ndarray]
 OptState = Any
 
-
-def load_dataset(split: tfds.Split, batch_size: int) -> Iterator[Batch]:
-    ds = tfds.load("mnist", split=split, shuffle_files=False)
-    ds = ds.shuffle(buffer_size=10 * batch_size)
-    ds = ds.batch(batch_size)
-    ds = ds.prefetch(buffer_size=5)
-    ds = ds.repeat()
-    return iter(tfds.as_numpy(ds))
 
 
 def show_img_grid(imgs, row_size=4):
