@@ -125,7 +125,7 @@ def get_config(dataset_name : str) -> config_dict.ConfigDict:
         max_gradient_norm=10000.,
     )
     config.eval = dict(
-        eval_every=25,
+        eval_every=5,
         batch_size=256,
         save_on_eval=True,
     )
