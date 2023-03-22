@@ -17,6 +17,7 @@ PRNGKey = Array
 Batch = Mapping[str, np.ndarray]
 OptState = Any
 
+__all__ = ["ImageDataset", "tfdsDataset"]
 
 class ImageDataset(abc.ABC):
     @abc.abstractclassmethod

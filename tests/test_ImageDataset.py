@@ -8,17 +8,17 @@ import tensorflow_datasets as tfds
 import sibylla.Norm_Flows.ImageDataset as imds
 
 
+
 class TestImageDataset():
     def test_always(self):
         assert(True)
 
-class TestMNIST():
-    def test_loader(self):
+class Test_tfdsDataset():
+    def test_generator(self):
         batch_size = 16
         im_width = 28
         for split in [tfds.Split.TRAIN, tfds.Split.TEST]:
-            ds = imds.MNIST
-            ds_loader = ds.load(split, batch_size)
+            ds_loader = imds.tfdsDataset.get_ds(split, batch_size)
 
             assert isinstance(ds_loader, types.GeneratorType)
             assert (next(ds_loader)['image'].shape == (batch_size, im_width, im_width, 1))
