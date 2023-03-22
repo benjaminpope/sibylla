@@ -94,6 +94,7 @@ def main(_):
 
 
     train_ds, eval_ds = ImageDataset.get_train_test_iterators('mnist', config.train.batch_size, config.eval.batch_size)
+    etrain_ds, eeval_ds = ImageDataset.get_train_test_iterators('emnist', config.train.batch_size, config.eval.batch_size)
 
     logging.info(f"Event size: {next(train_ds)['image'].shape}")
 
@@ -126,28 +127,37 @@ def main(_):
     ModelStorage.save_config(save_path, config)
 
 
-    epochs, train_losses, test_losses = [], [], []
+    epochs = []
+    eval_dsets = [eval_ds, etrain_ds]
+    eval_labels = ["evaluation", "emnist"]
+    loss_labels = ["train", *eval_labels]
+    losses = np.zeros([len(eval_labels) + 1, len(np.arange(0,FLAGS.num_iterations,config.eval.eval_every))])
+    loss_epoch_idx = 0
+
     for step in range(FLAGS.num_iterations):
         dset_imgs = next(train_ds)
         params, opt_state = update(params, rng_key, opt_state, dset_imgs)
 
         if step % config.eval.eval_every == 0:
-            val_loss = eval_fn(params, next(eval_ds))
             train_loss = loss_fn(params, rng_key, dset_imgs)
-            logging.info("STEP: %5d; Train loss: %.3f; Validation loss: %.3f", step, train_loss, val_loss)
 
             epochs.append(step)
-            train_losses.append(train_loss)
-            test_losses.append(val_loss)
+            losses[0,loss_epoch_idx] = train_loss
+            for i, eval_ds in enumerate(eval_dsets):
+                val_loss = eval_fn(params, next(eval_ds))
+                logging.info("STEP: %5d; Train loss: %.3f; Validation loss (%s): %.3f", step, train_loss, eval_labels[i], val_loss)
+                losses[i+1,loss_epoch_idx] = val_loss
+            loss_epoch_idx += 1
+            
 
             if config.eval.save_on_eval:
                 ModelStorage.save_checkpoint(save_path, step, params)
 
     logging.info('Saving model')
     ModelStorage.save_model(save_path, config, params)
-    curve = LearningCurve(epochs, train_losses, test_losses)
+    curve = LearningCurve(epochs, losses, loss_labels)
     curve.save_model_learning(save_path)
-    curve.plot_model_learning(save_path)
+    curve.plot_model_learning()
     logging.info('Done')
     
 if __name__ == '__main__':

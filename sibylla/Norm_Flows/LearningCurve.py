@@ -8,13 +8,13 @@ class LearningCurve:
         data that takes care of the train and test loss tracking
     """
 
-    def __init__(self, epochs, train_losses, test_losses) -> None:
-        assert len(epochs) == len(train_losses)
-        assert len(epochs) == len(test_losses)
+    def __init__(self, epochs, losses, labels) -> None:
+        assert len(epochs) == losses.shape[1]
+        assert len(labels) == losses.shape[0]
 
         self.epochs = np.array(epochs)
-        self.train_losses = np.array(train_losses)
-        self.test_losses = np.array(test_losses)
+        self.losses = np.array(losses)
+        self.labels = labels
 
     def save_model_learning(self, save_path):
         """
@@ -26,10 +26,12 @@ class LearningCurve:
 
     def plot_model_learning(self, save_path=None):
         plt.figure()
-        plt.plot(self.epochs, self.train_losses, label='training')
-        plt.plot(self.epochs, self.test_losses, label='testing')
+        for label_idx, label in enumerate(self.labels):
+            plt.plot(self.epochs, self.losses[label_idx,:], label=label)
+        plt.legend()
         plt.xlabel('Training Step')
         plt.ylabel('Loss')
+        
         if save_path is None:
             plt.show()
         else:
