@@ -100,9 +100,16 @@ def main(_):
         model = create_model()
         return model.log_prob(data)
     
-    def time_model(params, img, n_runs=10):
-        t = timeit.timeit(lambda: log_prob.apply(params, img), number = n_runs)
-        logging.info(f"{t/n_runs:.3e} seconds for {img.shape[0]} images (avg over {n_runs} runs)")
+    @jax.jit
+    def fast_log_prob(params, imgs):
+        return log_prob.apply(params, imgs)
+
+    def time_model(params, imgs, n_runs=10):
+        # make sure jited 
+        p = fast_log_prob(params, imgs)
+
+        t = timeit.timeit(lambda: fast_log_prob(params, imgs), number = n_runs)
+        logging.info(f"{t/n_runs:.3e} seconds for {imgs.shape[0]} images (avg over {n_runs} runs)")
         # t0 = time.clock()
         # for _ in range(n_runs):
         #     x = log_prob.apply(params, img)
