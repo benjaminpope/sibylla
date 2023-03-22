@@ -17,6 +17,7 @@ from ModelStorage import ModelStorage
 import torchvision.utils
 import math
 import torch
+import timeit
 
 import matplotlib.pyplot as plt
 import sibylla.Norm_Flows.uniform_base_flow_config as uniform_base_flow_config
@@ -99,6 +100,15 @@ def main(_):
         model = create_model()
         return model.log_prob(data)
     
+    def time_model(params, img, n_runs=10):
+        t = timeit.timeit(lambda: log_prob.apply(params, img), number = n_runs)
+        logging.info(f"{t/n_runs:.3e} seconds for {img.shape[0]} images (avg over {n_runs} runs)")
+        # t0 = time.clock()
+        # for _ in range(n_runs):
+        #     x = log_prob.apply(params, img)
+        # t1 = time.clock()
+        # logging.info(f"{(t1-t0)/n_runs:.3e} seconds for {img.shape[0]} images (avg over )")
+
     def display_fwd_inv(params, img):
         fwd = forward_model.apply(params, img)
         inv = inverse_model.apply(params, img)
@@ -148,7 +158,7 @@ def main(_):
             samples = jax.random.uniform(next(prng_seq), base_samples.shape)
             return forward_model.apply(params, samples)
 
-    def show_encoded_hist(dict_of_ds, params, prng_seq, x_scale="distance", norm_x_scale=True):
+    def show_encoded_hist(dict_of_ds, params, prng_seq, n_imgs=None):
         """
         Display a histogram showing how the encoded space looks
             - dict_of_ds: a dictionary of dataset generators e.g. {'train': train_ds, 'e_mnist': emnist_ds} 
@@ -161,22 +171,25 @@ def main(_):
         """
         hist_opts = {'lw' : 0.1, 'alpha' : 0.7, 'edgecolor' : 'k'}
 
+        if n_imgs is None:
+            n_imgs = imgs.shape[0]
+
         for ds_name, ds in dict_of_ds.items():
             imgs = ImageDataset.normalize_dequant_data(next(ds), next(prng_seq))
-            log_likelihoods = jax.vmap(log_prob.apply, in_axes=(None, 0))(params, imgs)
+            log_likelihoods = jax.vmap(log_prob.apply, in_axes=(None, 0))(params, imgs[:n_imgs])
 
             plt.hist(log_likelihoods, label=ds_name, **hist_opts)
         
         # compute for noise images
         imgs = jax.random.uniform(next(prng_seq), imgs.shape)
-        log_likelihoods = jax.vmap(log_prob.apply, in_axes=(None, 0))(params, imgs)
+        log_likelihoods = jax.vmap(log_prob.apply, in_axes=(None, 0))(params, imgs[:n_imgs])
         plt.hist(log_likelihoods, label='noise', **hist_opts)
 
         # inverted training images
-        imgs = ImageDataset.normalize_dequant_data(next(dict_of_ds['train']), next(prng_seq))
-        imgs = 1. - imgs
-        log_likelihoods = jax.vmap(log_prob.apply, in_axes=(None, 0))(params, imgs)
-        plt.hist(log_likelihoods, label='inverted', **hist_opts)
+        # imgs = ImageDataset.normalize_dequant_data(next(dict_of_ds['train']), next(prng_seq))
+        # imgs = 1. - imgs
+        # log_likelihoods = jax.vmap(log_prob.apply, in_axes=(None, 0))(params, imgs[:n_imgs])
+        # plt.hist(log_likelihoods, label='inverted', **hist_opts)
 
         plt.legend()
         plt.show()
@@ -190,15 +203,16 @@ def main(_):
     prng_seq = hk.PRNGSequence(42)
 
     # show_samples(params, prng_seq)
-
-    # show_encoded_hist(train_ds, eval_ds, params, prng_seq)4
-    dict_of_ds = {
-        'train' : train_ds, 
-        'eval' : eval_ds,
-        'emnist' : etrain_ds
-    }
-    show_encoded_hist(dict_of_ds, params, prng_seq, x_scale="log_likelihood")
+    imgs = ImageDataset.normalize_dequant_data(next(eval_ds), next(prng_seq))
+    time_model(params, imgs, n_runs=5)
     exit()
+    # dict_of_ds = {
+    #     'train' : train_ds, 
+    #     'eval' : eval_ds,
+    #     'emnist' : etrain_ds
+    # }
+    # show_encoded_hist(dict_of_ds, params, prng_seq,n_imgs=2)
+    # exit()
     # train_imgs = prepare_data(next(train_ds), next(prng_seq))
     # show_img_grid(train_imgs[0:8,:,:,:])
 
