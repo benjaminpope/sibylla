@@ -24,11 +24,16 @@ class LearningCurve:
             pickle.dump(self, f)
         
 
-    def plot_model_learning(self):
+    def plot_model_learning(self, save_path=None):
         plt.figure()
         plt.plot(self.epochs, self.train_losses, label='training')
         plt.plot(self.epochs, self.test_losses, label='testing')
-        plt.show()
+        plt.xlabel('Training Step')
+        plt.ylabel('Loss')
+        if save_path is None:
+            plt.show()
+        else:
+            plt.savefig(os.path.join(save_path,'learning_curve.pdf'))
 
 
     def load_model_learning(save_path):

@@ -147,6 +147,7 @@ def main(_):
     ModelStorage.save_model(save_path, config, params)
     curve = LearningCurve(epochs, train_losses, test_losses)
     curve.save_model_learning(save_path)
+    curve.plot_model_learning(save_path)
     logging.info('Done')
     
 if __name__ == '__main__':
