@@ -3,6 +3,9 @@ import jax.numpy as np
 import pickle
 import matplotlib.pyplot as plt
 
+__all__ = ["LearningCurve"]
+
+
 class LearningCurve:
     """
         data that takes care of the train and test loss tracking

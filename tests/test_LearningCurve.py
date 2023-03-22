@@ -1,16 +1,15 @@
 import jax.numpy as np
 import pytest
-import jax.random as random
 
 
-import sibylla.Norm_Flows.LearningCurve as lc
+from sibylla.Norm_Flows import LearningCurve
 
 
 class TestLearningCurve():
     def test_load_and_save(self):
-        l = lc.LearningCurve([1,2],[1,2],[1,2])
+        l = LearningCurve([1,2],np.array([[1,2],[1,2]]),["t","e"])
         l.save_model_learning('trained_models/')
-        L = lc.load_model_learning('trained_models/')
-        assert(L.epochs == [1,2])
-        assert(L.train_losses == [1,2])
-        assert(L.test_losses == [1,2])
+        L = LearningCurve.load_model_learning('trained_models/')
+        assert((L.epochs == np.array([1,2])).all())
+        assert((L.losses == np.array([[1,2],[1,2]])).all())
+        assert(L.labels == ["t","e"])

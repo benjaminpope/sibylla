@@ -5,7 +5,7 @@ import jax.random as random
 import types
 
 import tensorflow_datasets as tfds
-import sibylla.Norm_Flows.ImageDataset as imds
+from sibylla.Norm_Flows import tfdsDataset
 
 
 
@@ -18,7 +18,7 @@ class Test_tfdsDataset():
         batch_size = 16
         im_width = 28
         for split in [tfds.Split.TRAIN, tfds.Split.TEST]:
-            ds_loader = imds.tfdsDataset.get_ds(split, batch_size)
+            ds_loader = tfdsDataset.get_generator('mnist', split, batch_size)
 
             assert isinstance(ds_loader, types.GeneratorType)
             assert (next(ds_loader)['image'].shape == (batch_size, im_width, im_width, 1))
