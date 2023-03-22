@@ -54,14 +54,6 @@ OptState = Any
 jax.random.PRNGKey(5)
 
 
-def load_dataset(split: tfds.Split, batch_size: int) -> Iterator[Batch]:
-    ds = tfds.load("mnist", split=split, shuffle_files=True)
-    ds = ds.shuffle(buffer_size=10 * batch_size)
-    ds = ds.batch(batch_size)
-    ds = ds.prefetch(buffer_size=5)
-    ds = ds.repeat()
-    return iter(tfds.as_numpy(ds))
-
 
 def main(_):
     if FLAGS.flow_model == "uniform_base_flow":
@@ -115,7 +107,6 @@ def main(_):
         updates, new_opt_state = optimizer.update(grads, opt_state)
         new_params = optax.apply_updates(params, updates)
         return new_params, new_opt_state
-    # jitted_eval = jax.jit(apply_eval_fn)
 
     @jax.jit
     def eval_fn(params: hk.Params, batch: Batch) -> Array:
