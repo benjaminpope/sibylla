@@ -1,3 +1,7 @@
+"""
+A functional way to share common code by having a function return common functions 
+for using norm flows
+"""
 import haiku as hk
 import jax.numpy as np
 from typing import Mapping
@@ -10,28 +14,24 @@ Batch = Mapping[str, np.ndarray]
 import sibylla.Norm_Flows.uniform_base_flow_config as uniform_base_flow_config
 
 class NormFlow:
-    def __init__(self, config):
-        self.config = config
+    def get_log_prob(config):
+        def create_model():
+            return config.model['constructor'](
+                **config.model['kwargs'])
 
-    def create_model(self):
-        return self.config.model['constructor'](
-            **self.config.model['kwargs'])
+        @hk.without_apply_rng
+        @hk.transform
+        def log_prob(data: Array) -> Array:
+            model = create_model()
+            return model.log_prob(data)
 
-    @hk.without_apply_rng
-    @hk.transform
-    def log_prob(self, data: Array) -> Array:
-        model = self.create_model()
-        return model.log_prob(data)
-
-    def loss_fn(self, params: hk.Params, prng_key: PRNGKey, batch: Batch) -> Array:
-        data = ImageDataset.normalize_dequant_data(batch, prng_key)
-        # Loss is average negative log likelihood.
-        loss = -np.mean(self.log_prob.apply(params, data))
-        return loss
+        return log_prob
         
 if __name__ == "__main__":
+    import jax
     config = uniform_base_flow_config.get_config('MNIST')
 
-    nf = NormFlow(config)
+    log_prob = NormFlow.get_log_prob(config)
 
-    model = nf.create_model()
+    params = log_prob.init(jax.random.PRNGKey(2), np.zeros((1, *config.data_shape)))
+    print(log_prob.apply(params, jax.numpy.zeros((5, *config.data_shape))))
