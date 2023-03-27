@@ -30,6 +30,7 @@ import optax
 import tensorflow_datasets as tfds
 from ModelStorage import ModelStorage
 from ImageDataset import ImageDataset
+from NormFlow import NormFlow
 
 # import all configs
 import sibylla.Norm_Flows.uniform_base_flow_config as uniform_base_flow_config
@@ -108,11 +109,7 @@ def main(_):
         new_params = optax.apply_updates(params, updates)
         return new_params, new_opt_state
 
-    @jax.jit
-    def eval_fn(params: hk.Params, batch: Batch) -> Array:
-        data = ImageDataset.normalize_dequant_data(batch)
-        loss = -jnp.mean(log_prob.apply(params, data))
-        return loss
+    eval_fn = NormFlow.get_eval_fn(config)
 
     logging.info('Beginning of training...')
     ModelStorage.save_config(save_path, config)

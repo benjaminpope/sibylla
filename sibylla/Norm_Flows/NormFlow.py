@@ -5,6 +5,7 @@ for using norm flows
 import haiku as hk
 import jax.numpy as np
 from typing import Mapping
+import jax
 from ImageDataset import ImageDataset
 
 Array = np.ndarray
@@ -26,7 +27,29 @@ class NormFlow:
             return model.log_prob(data)
 
         return log_prob
+    
+    def get_loss_fn(config):
+        log_prob = NormFlow.get_log_prob(config)
+
+        def loss_fn(params: hk.Params, prng_key: PRNGKey, batch: Batch) -> Array:
+            data = ImageDataset.normalize_dequant_data(batch, prng_key)
+            # Loss is average negative log likelihood.
+            loss = -np.mean(log_prob.apply(params, data))
+            return loss
+
+        return loss_fn
+    
+    def get_eval_fn(config):
+        log_prob = NormFlow.get_log_prob(config)
+
+        @jax.jit
+        def eval_fn(params: hk.Params, batch: Batch) -> Array:
+            data = ImageDataset.normalize_dequant_data(batch)
+            loss = -np.mean(log_prob.apply(params, data))
+            return loss
         
+        return eval_fn
+
 if __name__ == "__main__":
     import jax
     config = uniform_base_flow_config.get_config('MNIST')
