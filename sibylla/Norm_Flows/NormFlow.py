@@ -15,11 +15,17 @@ Batch = Mapping[str, np.ndarray]
 import sibylla.Norm_Flows.uniform_base_flow_config as uniform_base_flow_config
 
 class NormFlow:
-    def get_log_prob(config):
+    def get_create_model(config):
         def create_model():
             return config.model['constructor'](
                 **config.model['kwargs'])
+    
+        return create_model
 
+
+    def get_log_prob(config):
+        create_model = NormFlow.get_create_model(config)
+        
         @hk.without_apply_rng
         @hk.transform
         def log_prob(data: Array) -> Array:
@@ -39,6 +45,29 @@ class NormFlow:
 
         return loss_fn
     
+    def get_inverse_model(config):
+        create_model = NormFlow.get_create_model(config)
+
+        @hk.without_apply_rng
+        @hk.transform
+        def inverse_model(data):
+            model = create_model()
+            return model.bijector.inverse(data)
+
+        return inverse_model
+
+
+    def get_forward_model(config):
+        create_model = NormFlow.get_create_model(config)
+
+        @hk.without_apply_rng
+        @hk.transform
+        def forward_model(data):
+            model = create_model()
+            return model.bijector.forward(data)
+
+        return forward_model
+
     def get_eval_fn(config):
         log_prob = NormFlow.get_log_prob(config)
 
@@ -49,6 +78,8 @@ class NormFlow:
             return loss
         
         return eval_fn
+    
+    
 
 if __name__ == "__main__":
     import jax

@@ -11,17 +11,14 @@ import haiku as hk
 import jax
 import jax.numpy as jnp
 import numpy as np
-import optax
 import tensorflow_datasets as tfds
 from ModelStorage import ModelStorage
-import torchvision.utils
-import math
-import torch
 import timeit
 
 import matplotlib.pyplot as plt
 import sibylla.Norm_Flows.uniform_base_flow_config as uniform_base_flow_config
 from ImageDataset import ImageDataset
+from NormFlow import NormFlow
 
 jax.random.PRNGKey(4)
 
@@ -43,17 +40,6 @@ OptState = Any
 
 
 
-def show_img_grid(imgs, row_size=4):
-    num_imgs = imgs.shape[0]
-    nrow = min(num_imgs, row_size)
-    ncol = int(math.ceil(num_imgs / nrow))
-    imgs_torch = torch.from_numpy(np.array(imgs)).permute(0, 3, 1, 2)
-    imgs = torchvision.utils.make_grid(imgs_torch, nrow=nrow)
-    np_imgs = imgs.cpu().numpy()
-    plt.figure(figsize=(1.5 * nrow, 1.5 * ncol))
-    plt.imshow(np.transpose(np_imgs, (1, 2, 0)))
-    plt.axis('off')
-    plt.show()
 
 
 def main(_):
@@ -70,17 +56,8 @@ def main(_):
         return config.model['constructor'](
             **config.model['kwargs'])
 
-    @hk.without_apply_rng
-    @hk.transform
-    def inverse_model(data):
-        model = create_model()
-        return model.bijector.inverse(data)
-
-    @hk.without_apply_rng
-    @hk.transform
-    def forward_model(data):
-        model = create_model()
-        return model.bijector.forward(data)
+    inverse_model = NormFlow.get_inverse_model(config)
+    forward_model = NormFlow.get_forward_model(config)
 
     @hk.without_apply_rng
     @hk.transform
@@ -94,11 +71,7 @@ def main(_):
         model = create_model()
         return model.distribution
 
-    @hk.without_apply_rng
-    @hk.transform
-    def log_prob(data: Array) -> Array:
-        model = create_model()
-        return model.log_prob(data)
+    log_prob = NormFlow.get_log_prob(config)
     
     @jax.jit
     def fast_log_prob(params, imgs):
@@ -210,7 +183,7 @@ def main(_):
     prng_seq = hk.PRNGSequence(42)
 
     # show_samples(params, prng_seq)
-    imgs = ImageDataset.normalize_dequant_data(next(eval_ds), next(prng_seq))
+    imgs = ImageDataset.normalize_dequant_data(next(eval_ds), next(prng_seq))[0:10]
     time_model(params, imgs, n_runs=5)
     exit()
     # dict_of_ds = {
