@@ -35,13 +35,14 @@ from NormFlow import NormFlow
 # import all configs
 import sibylla.Norm_Flows.uniform_base_flow_config as uniform_base_flow_config
 import different_mask_flow_uniform_config as different_mask_flow_uniform_config
+import random_mask_flow_uniform_config as random_mask_flow_uniform_config
 from LearningCurve import LearningCurve
 
 Array = chex.Array
 Numeric = Union[Array, float]
 
-flags.DEFINE_enum('flow_model', 'different_mask_flow',
-                  ['uniform_base_flow','different_mask_flow'], 'Flow to train')
+flags.DEFINE_enum('flow_model', 'random_mask_flow',
+                  ['uniform_base_flow','different_mask_flow','random_mask_flow'], 'Flow to train')
 flags.DEFINE_enum('dataset', 'MNIST',
                   ['MNIST'], 'Dataset to train')
 flags.DEFINE_integer('num_iterations', int(2e3), 'Number of training steps.')
@@ -62,6 +63,8 @@ def main(_):
         config = uniform_base_flow_config.get_config(FLAGS.dataset)
     elif FLAGS.flow_model == "different_mask_flow":
         config = different_mask_flow_uniform_config.get_config(FLAGS.dataset)
+    elif FLAGS.flow_model == "random_mask_flow":
+        config = random_mask_flow_uniform_config.get_config(FLAGS.dataset)
     else:
         raise KeyError(f'{FLAGS.flow_model} is not implemented!')
 
@@ -148,7 +151,7 @@ def main(_):
     ModelStorage.save_model(save_path, config, params)
     curve = LearningCurve(epochs, losses, loss_labels)
     curve.save_model_learning(save_path)
-    curve.plot_model_learning()
+    curve.plot_model_learning(save_path)
     logging.info('Done')
     
 if __name__ == '__main__':

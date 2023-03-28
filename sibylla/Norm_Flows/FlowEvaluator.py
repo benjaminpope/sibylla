@@ -39,11 +39,11 @@ class FlowEvaluator:
         """
         Function to call when done with a plot, it will save it or show it depending on the settings
         """
-        if self.show_plots:
-            plt.show()
         if self.save_plots:
             assert save_name is not None, "must provide save name"
             plt.savefig(os.path.join(self.save_path, f"{save_name}{self.save_extension}"))
+        if self.show_plots:
+            plt.show()
 
     def get_results_path(self):
         """ Create a folder to save the model in and return the path"""

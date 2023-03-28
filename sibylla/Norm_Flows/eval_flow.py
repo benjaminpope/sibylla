@@ -18,6 +18,7 @@ import timeit
 import matplotlib.pyplot as plt
 import sibylla.Norm_Flows.uniform_base_flow_config as uniform_base_flow_config
 import different_mask_flow_uniform_config as different_mask_flow_uniform_config
+import random_mask_flow_uniform_config as random_mask_flow_uniform_config
 from ImageDataset import ImageDataset
 from NormFlow import NormFlow
 from FlowEvaluator import FlowEvaluator
@@ -28,8 +29,8 @@ Array = chex.Array
 Numeric = Union[Array, float]
 
 flags.DEFINE_integer('version', -1, 'which version of the model to use')
-flags.DEFINE_enum('flow_model', 'different_mask_flow',
-                  ['uniform_base_flow','different_mask_flow'], 'Flow to eval')
+flags.DEFINE_enum('flow_model', 'random_mask_flow',
+                  ['uniform_base_flow','different_mask_flow','random_mask_flow'], 'Flow to eval')
 flags.DEFINE_enum('dataset', 'MNIST',
                   ['MNIST'], 'Dataset to train')
 
@@ -49,6 +50,8 @@ def main(_):
         config = uniform_base_flow_config.get_config(FLAGS.dataset)
     elif FLAGS.flow_model == "different_mask_flow":
         config = different_mask_flow_uniform_config.get_config(FLAGS.dataset)
+    elif FLAGS.flow_model == "random_mask_flow":
+        config = random_mask_flow_uniform_config.get_config(FLAGS.dataset)
     else:
         raise KeyError(f'{FLAGS.flow_model} is not implemented!')
 
@@ -119,7 +122,7 @@ def main(_):
 
     prng_seq = hk.PRNGSequence(42)
 
-    evaluator = FlowEvaluator(config, show_plots=True, save_plots=True)
+    evaluator = FlowEvaluator(config, version=FLAGS.version, show_plots=True, save_plots=True)
 
     img = ImageDataset.normalize_dequant_data(next(eval_ds), next(prng_seq))[0]
     evaluator.display_fwd_inv(img)
