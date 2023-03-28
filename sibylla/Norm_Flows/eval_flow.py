@@ -17,6 +17,7 @@ import timeit
 
 import matplotlib.pyplot as plt
 import sibylla.Norm_Flows.uniform_base_flow_config as uniform_base_flow_config
+import different_mask_flow_uniform_config as different_mask_flow_uniform_config
 from ImageDataset import ImageDataset
 from NormFlow import NormFlow
 from FlowEvaluator import FlowEvaluator
@@ -27,8 +28,8 @@ Array = chex.Array
 Numeric = Union[Array, float]
 
 flags.DEFINE_integer('version', -1, 'which version of the model to use')
-flags.DEFINE_enum('flow_model', 'uniform_base_flow',
-                  ['uniform_base_flow'], 'Flow to train')
+flags.DEFINE_enum('flow_model', 'different_mask_flow',
+                  ['uniform_base_flow','different_mask_flow'], 'Flow to eval')
 flags.DEFINE_enum('dataset', 'MNIST',
                   ['MNIST'], 'Dataset to train')
 
@@ -46,6 +47,8 @@ OptState = Any
 def main(_):
     if FLAGS.flow_model == "uniform_base_flow":
         config = uniform_base_flow_config.get_config(FLAGS.dataset)
+    elif FLAGS.flow_model == "different_mask_flow":
+        config = different_mask_flow_uniform_config.get_config(FLAGS.dataset)
     else:
         raise KeyError(f'{FLAGS.flow_model} is not implemented!')
 
@@ -126,7 +129,7 @@ def main(_):
         'eval' : eval_ds,
         'emnist' : etrain_ds
     }
-    evaluator.show_encoded_hist(dict_of_ds, prng_seq, n_imgs=5)
+    evaluator.show_encoded_hist(dict_of_ds, prng_seq, n_imgs=256)
 
 
     exit()

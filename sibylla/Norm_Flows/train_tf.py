@@ -34,16 +34,17 @@ from NormFlow import NormFlow
 
 # import all configs
 import sibylla.Norm_Flows.uniform_base_flow_config as uniform_base_flow_config
+import different_mask_flow_uniform_config as different_mask_flow_uniform_config
 from LearningCurve import LearningCurve
 
 Array = chex.Array
 Numeric = Union[Array, float]
 
-flags.DEFINE_enum('flow_model', 'uniform_base_flow',
-                  ['uniform_base_flow'], 'Flow to train')
+flags.DEFINE_enum('flow_model', 'different_mask_flow',
+                  ['uniform_base_flow','different_mask_flow'], 'Flow to train')
 flags.DEFINE_enum('dataset', 'MNIST',
                   ['MNIST'], 'Dataset to train')
-flags.DEFINE_integer('num_iterations', int(400), 'Number of training steps.')
+flags.DEFINE_integer('num_iterations', int(2e3), 'Number of training steps.')
 
 FLAGS = flags.FLAGS
 
@@ -59,6 +60,8 @@ jax.random.PRNGKey(5)
 def main(_):
     if FLAGS.flow_model == "uniform_base_flow":
         config = uniform_base_flow_config.get_config(FLAGS.dataset)
+    elif FLAGS.flow_model == "different_mask_flow":
+        config = different_mask_flow_uniform_config.get_config(FLAGS.dataset)
     else:
         raise KeyError(f'{FLAGS.flow_model} is not implemented!')
 

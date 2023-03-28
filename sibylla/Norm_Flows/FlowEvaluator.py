@@ -83,21 +83,31 @@ class FlowEvaluator:
             imgs = ImageDataset.normalize_dequant_data(next(ds), next(prng_seq))
             log_likelihoods = jax.vmap(log_prob.apply, in_axes=(None, 0))(self.params, imgs[:n_imgs])
 
+            log_likelihoods = FlowEvaluator.remove_infs(log_likelihoods, ds_name)
             plt.hist(log_likelihoods, label=ds_name, **hist_opts)
         
         # compute for noise images
         imgs = jax.random.uniform(next(prng_seq), imgs.shape)
         log_likelihoods = jax.vmap(log_prob.apply, in_axes=(None, 0))(self.params, imgs[:n_imgs])
+        log_likelihoods = FlowEvaluator.remove_infs(log_likelihoods, 'noise data')
         plt.hist(log_likelihoods, label='noise', **hist_opts)
 
         # inverted training images
-        # imgs = ImageDataset.normalize_dequant_data(next(dict_of_ds['train']), next(prng_seq))
-        # imgs = 1. - imgs
-        # log_likelihoods = jax.vmap(log_prob.apply, in_axes=(None, 0))(self.params, imgs[:n_imgs])
-        # plt.hist(log_likelihoods, label='inverted', **hist_opts)
+        imgs = ImageDataset.normalize_dequant_data(next(dict_of_ds['train']), next(prng_seq))
+        imgs = 1. - imgs
+        log_likelihoods = jax.vmap(log_prob.apply, in_axes=(None, 0))(self.params, imgs[:n_imgs])
+        log_likelihoods = FlowEvaluator.remove_infs(log_likelihoods, 'inverted data')
+        plt.hist(log_likelihoods, label='inverted', **hist_opts)
 
         plt.legend()
         self.finish_plot('encoded_hist')
+
+    def remove_infs(arr, msg=None):
+        if jnp.isinf(arr).any():
+            if msg is not None:
+                logging.warn(f"Removing infs from {msg}")
+            arr = arr[jnp.isfinite(arr)]
+        return arr
 
     def display_fwd_inv(self, img):
         forward_model = NormFlow.get_forward_model(self.config)
