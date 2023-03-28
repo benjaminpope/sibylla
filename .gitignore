@@ -140,3 +140,4 @@ trained_models
 *.pickle
 
 explain_flows.ipynb
+results

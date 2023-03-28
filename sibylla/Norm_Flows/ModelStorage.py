@@ -10,7 +10,7 @@ import matplotlib.pyplot as plt
 
 class ModelStorage(abc.ABC):
     def get_model_path(config, version=-1):
-        """ Create a folder to save the model in and return the path"""
+        """ Find a folder to save the model in and return the path"""
         model_path = os.path.join('trained_models', config.model_name)
         if not os.path.exists(model_path):
             os.makedirs(model_path)
@@ -21,7 +21,8 @@ class ModelStorage(abc.ABC):
         else:
             target_version = f'version_{version}'
         version_path = os.path.join(model_path, target_version)
-        return version_path
+        actual_version = int(target_version.split('_')[1])
+        return version_path, actual_version
 
     def make_model_path(config):
         """ Create a folder to save the model in and return the path"""
