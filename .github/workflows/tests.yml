@@ -28,6 +28,6 @@ jobs:
           pip install --quiet .
 
       # ===== Tests =====
-      - name: general tests
-        run: pytest --quiet tests/general.py
+      - name: dataset loader tests
+        run: pytest --quiet tests/test_ImageDataset.py
 

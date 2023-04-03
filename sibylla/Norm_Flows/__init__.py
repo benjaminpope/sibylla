@@ -1,5 +1,9 @@
-from . import data_loaders
+name = "Norm_Flows"
 
-from .data_loaders import *
+from . import ImageDataset
+from . import LearningCurve
 
-__all__ = data_loaders.__all__.copy()
+__all__ = ImageDataset.__all__ + LearningCurve.__all__
+
+from .ImageDataset import *
+from .LearningCurve import * 

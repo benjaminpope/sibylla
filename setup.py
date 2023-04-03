@@ -40,7 +40,7 @@ setuptools.setup(
     url="https://github.com/benjaminpope/sibylla",
     
     project_urls={
-        "Bug Tracker": "https://github.com/benjaminpopepy/sibylla/issues",
+        "Bug Tracker": "https://github.com/benjaminpope/sibylla/issues",
     },
     
     # package_dir={"": "src"},
