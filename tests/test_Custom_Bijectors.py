@@ -1,4 +1,5 @@
 import jax.numpy as np
+import jax
 import pytest
 
 
@@ -107,4 +108,13 @@ class TestSqueeze():
 
     def test_multiple_applications(self):
         # try with a random matrix and make sure forward and inverse get back to the same
-        pass
+        prng = jax.random.PRNGKey(0)
+        x = jax.random.randint(prng, (4,10,8,3), 0, 256)
+
+        bij = Squeeze()
+
+        y = bij.forward(x)
+        x_new = bij.inverse(y)
+
+        assert np.isclose(x_new, x).all()
+        assert x.shape == x_new.shape
