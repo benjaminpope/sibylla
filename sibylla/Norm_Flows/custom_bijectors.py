@@ -34,7 +34,8 @@ class Squeeze(base.Bijector):
 
     def inverse_and_log_det(self, y: Array) -> Tuple[Array, Array]:
         """Computes x = f^{-1}(y) and log|det J(f^{-1})(y)|."""
-        x=y
+        B, H, W, C = y.shape
+        x=y.reshape(B, H, W, 2, 2, C//4).transpose((0, 1, 3, 2, 4, 5)).reshape(B, H*2, W*2, C//4)
         logdet = 0
         return x, logdet
 

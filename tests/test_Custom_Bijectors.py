@@ -76,7 +76,7 @@ class TestSqueeze():
         assert true.shape == (1,4,4,1)
 
         assert ldet == 0
-        assert x.shape == (1,2,2,4)
+        assert x.shape == (1,4,4,1)
 
         assert (x == true).all()
         
