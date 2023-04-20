@@ -58,3 +58,32 @@ class TestSqueeze():
         assert y.shape == (n_repeats,2,2,4)
 
         assert (y == true).all()
+    
+    def test_inverse_simple(self):
+        true = np.arange(1.,17).reshape(1, 4, 4, 1)
+
+        y = np.array([[[[ 1, 3],
+                           [ 9,11]],
+                          [[ 2, 4],
+                           [10,12]],
+                          [[ 5, 7],
+                           [13,15]],
+                          [[ 6, 8],
+                           [14,16]]]]).transpose(0,2,3,1)
+        
+        x,ldet = Squeeze().inverse_and_log_det(y)
+
+        assert true.shape == (1,4,4,1)
+
+        assert ldet == 0
+        assert x.shape == (1,2,2,4)
+
+        assert (x == true).all()
+        
+    
+    def test_inverse_block(self):
+        pass
+
+    def test_multiple_applications(self):
+        # try with a random matrix and make sure forward and inverse get back to the same
+        pass
