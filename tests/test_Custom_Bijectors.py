@@ -3,7 +3,7 @@ import jax
 import pytest
 
 
-from sibylla.Norm_Flows import Squeeze
+from sibylla.Norm_Flows import Squeeze, IgnorantMaskedCoupling
 
 
 class TestSqueeze():
@@ -118,3 +118,9 @@ class TestSqueeze():
 
         assert np.isclose(x_new, x).all()
         assert x.shape == x_new.shape
+    
+
+
+class TestIgnorantMaskedCoupling:
+    def test_ctor(self):
+        IgnorantMaskedCoupling()
