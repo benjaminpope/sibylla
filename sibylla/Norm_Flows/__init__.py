@@ -7,3 +7,4 @@ __all__ = ImageDataset.__all__ + LearningCurve.__all__
 
 from .ImageDataset import *
 from .LearningCurve import * 
+from .custom_bijectors import *

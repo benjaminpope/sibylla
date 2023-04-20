@@ -29,7 +29,7 @@ Array = chex.Array
 Numeric = Union[Array, float]
 
 flags.DEFINE_integer('version', -1, 'which version of the model to use')
-flags.DEFINE_enum('flow_model', 'random_mask_flow',
+flags.DEFINE_enum('flow_model', 'uniform_base_flow',
                   ['uniform_base_flow','different_mask_flow','random_mask_flow'], 'Flow to eval')
 flags.DEFINE_enum('dataset', 'MNIST',
                   ['MNIST'], 'Dataset to train')
