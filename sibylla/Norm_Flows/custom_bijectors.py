@@ -27,7 +27,8 @@ class Squeeze(base.Bijector):
 
     def forward_and_log_det(self, x: Array) -> Tuple[Array, Array]:
         """Computes y = f(x) and log|det J(f)(x)|."""
-        y = x
+        B, H, W, C = x.shape
+        y = x.reshape(B, H//2, 2, W//2, 2, C).transpose((0, 1, 3, 2, 4, 5)).reshape(B, H//2, W//2, 4*C)
         logdet = 0
         return y, logdet
 
