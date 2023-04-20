@@ -66,8 +66,11 @@ class IgnorantMaskedCoupling(base.Bijector):
     and introducing
         z_ignored = n*z
     """
-    def __init__(self):
-        pass
+    def __init__(self, 
+                 coupling_mask : Array[bool],
+                 ignorance_mask : Array[bool]):
+        self.coupling_mask = coupling_mask
+        self.ignorance_mask = ignorance_mask
 
 
     def forward_and_log_det(self, x: Array) -> Tuple[Array, Array]:

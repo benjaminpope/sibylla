@@ -123,4 +123,13 @@ class TestSqueeze():
 
 class TestIgnorantMaskedCoupling:
     def test_ctor(self):
-        IgnorantMaskedCoupling()
+        event_shape = (1,4,4,1)
+
+        coupling_mask = np.arange(0, np.prod(event_shape)) % 3 == 0
+        coupling_mask = np.reshape(coupling_mask, event_shape)
+
+
+        ignorance_mask = np.arange(0, np.prod(event_shape)) % 3 == 1
+        ignorance_mask = np.reshape(ignorance_mask, event_shape)
+
+        IgnorantMaskedCoupling(coupling_mask, ignorance_mask)
