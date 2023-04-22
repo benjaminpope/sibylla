@@ -123,7 +123,7 @@ class TestSqueeze():
 
 class TestIgnorantMaskedCoupling:
     def test_ctor(self):
-        event_shape = (1,4,4,1)
+        event_shape = np.array((1,4,4,1))
 
         coupling_mask = np.arange(0, np.prod(event_shape)) % 3 == 0
         coupling_mask = np.reshape(coupling_mask, event_shape)
@@ -133,3 +133,14 @@ class TestIgnorantMaskedCoupling:
         ignorance_mask = np.reshape(ignorance_mask, event_shape)
 
         IgnorantMaskedCoupling(coupling_mask, ignorance_mask)
+
+    def test_ctor_reject_overlap(self):
+        # verify that it is invalid to use two masks with any overlap
+        event_shape = np.array((1,4,4,1))
+        coupling_mask = np.arange(0, np.prod(event_shape)) % 3 == 0
+        coupling_mask = np.reshape(coupling_mask, event_shape)
+
+        ignorance_mask = coupling_mask.copy()
+        
+        with pytest.raises(ValueError):
+            IgnorantMaskedCoupling(coupling_mask, ignorance_mask)
