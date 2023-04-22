@@ -67,8 +67,8 @@ class IgnorantMaskedCoupling(base.Bijector):
         z_ignored = n*z
     """
     def __init__(self, 
-                 coupling_mask : Array[bool],
-                 ignorance_mask : Array[bool]):
+                 coupling_mask : Array,
+                 ignorance_mask : Array):
         self.coupling_mask = coupling_mask
         self.ignorance_mask = ignorance_mask
 
