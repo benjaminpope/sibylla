@@ -69,6 +69,10 @@ class IgnorantMaskedCoupling(base.Bijector):
     def __init__(self, 
                  coupling_mask : Array,
                  ignorance_mask : Array):
+        
+        if np.logical_or(coupling_mask, ignorance_mask).any():
+            raise ValueError('The masks must have no overlap')
+
         self.coupling_mask = coupling_mask
         self.ignorance_mask = ignorance_mask
 
