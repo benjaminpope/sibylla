@@ -23,6 +23,7 @@ import haiku as hk
 import numpy as np
 import distrax
 from sibylla.Norm_Flows import Squeeze, IgnorantMaskedCoupling
+from Image_masks import CheckboardMask, ChannelMask
 
 Array = jnp.ndarray
 
@@ -49,17 +50,14 @@ def make_flow_model(event_shape: Sequence[int],
                     hidden_sizes: Sequence[int],
                     num_bins: int) -> distrax.Transformed:
     """Creates the flow model."""
-    # Alternating binary mask.
-    checkerboard_mask = jnp.arange(0, np.prod(event_shape)) % 2
-    checkerboard_mask = jnp.reshape(checkerboard_mask, event_shape)
-    checkerboard_mask = checkerboard_mask.astype(bool)
+    x, y = np.arange(event_shape[0], dtype=np.int32), np.arange(event_shape[1], dtype=np.int32)
+    xx, yy = np.meshgrid(x, y, indexing='ij')
+    mask = np.fmod(xx + yy, 2)
+    mask = mask.astype(bool).reshape(event_shape[0], event_shape[1], 1)
+    mask = np.repeat(mask, event_shape[2], axis=2)
 
-    channel_mask = jnp.concatenate([
-                jnp.ones((event_shape[0]//2, event_shape[1]//2, 1)),
-                jnp.zeros((event_shape[0]//2, event_shape[1]//2, 1))
-    ], axis=2)
-    channel_mask = channel_mask.repeat(int(event_shape[2]*2),axis=2)
-    channel_mask = channel_mask.astype(bool)
+    checkerboard_mask = mask
+    ignorance_mask = jnp.zeros_like(checkerboard_mask).astype(bool)
 
     def bijector_fn(params: Array):
         return distrax.RationalQuadraticSpline(
@@ -75,8 +73,9 @@ def make_flow_model(event_shape: Sequence[int],
     layers = []
     # first quarter of the layers are normal dense masked coupling
     for _ in range(2):
-        layer = distrax.MaskedCoupling(
-            mask=checkerboard_mask,
+        layer = IgnorantMaskedCoupling(
+            coupling_mask=checkerboard_mask,
+            ignorance_mask=ignorance_mask,
             bijector=bijector_fn,
             conditioner=make_conditioner(event_shape, hidden_sizes,
                                          num_bijector_params))
@@ -84,20 +83,20 @@ def make_flow_model(event_shape: Sequence[int],
         # Flip the mask after each layer.
         checkerboard_mask = jnp.logical_not(checkerboard_mask)
 
-    assert isinstance(event_shape, tuple)
-    layers.append(Squeeze(layer._event_ndims_out, layer._event_ndims_out))
-    event_shape = (event_shape[0]//2, event_shape[1]//2, event_shape[2]*4)
+    # assert isinstance(event_shape, tuple)
+    # layers.append(Squeeze(layer._event_ndims_out, layer._event_ndims_out))
+    # event_shape = (event_shape[0]//2, event_shape[1]//2, event_shape[2]*4)
 
     # next two use channel mask
-    for _ in range(2):
-        layer = distrax.MaskedCoupling(
-            mask=channel_mask,
-            bijector=bijector_fn,
-            conditioner=make_conditioner(event_shape, hidden_sizes,
-                                         num_bijector_params))
-        layers.append(layer)
-        # Flip the mask after each layer.
-        channel_mask = jnp.logical_not(channel_mask)
+    # for _ in range(2):
+    #     layer = distrax.MaskedCoupling(
+    #         mask=channel_mask,
+    #         bijector=bijector_fn,
+    #         conditioner=make_conditioner(event_shape, hidden_sizes,
+    #                                      num_bijector_params))
+    #     layers.append(layer)
+    #     # Flip the mask after each layer.
+    #     channel_mask = jnp.logical_not(channel_mask)
 
 
 
