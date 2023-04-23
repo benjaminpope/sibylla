@@ -22,21 +22,23 @@ class Squeeze(base.Bijector):
     In either case, the log determinant of the jacobian is 0
     """
 
-    def __init__(self):
-        pass
+    def __init__(self,
+               event_ndims_in: int,
+               event_ndims_out: int):
+        super().__init__(event_ndims_in, event_ndims_out, is_constant_jacobian=False,is_constant_log_det=True)
 
 
     def forward_and_log_det(self, x: Array) -> Tuple[Array, Array]:
         """Computes y = f(x) and log|det J(f)(x)|."""
-        B, H, W, C = x.shape
-        y = x.reshape(B, H//2, 2, W//2, 2, C).transpose((0, 1, 3, 2, 4, 5)).reshape(B, H//2, W//2, 4*C)
+        H, W, C = x.shape
+        y = x.reshape(H//2, 2, W//2, 2, C).transpose((0, 2, 1, 3, 4)).reshape(H//2, W//2, 4*C)
         logdet = 0
         return y, logdet
 
     def inverse_and_log_det(self, y: Array) -> Tuple[Array, Array]:
         """Computes x = f^{-1}(y) and log|det J(f^{-1})(y)|."""
-        B, H, W, C = y.shape
-        x=y.reshape(B, H, W, 2, 2, C//4).transpose((0, 1, 3, 2, 4, 5)).reshape(B, H*2, W*2, C//4)
+        H, W, C = y.shape
+        x=y.reshape(H, W, 2, 2, C//4).transpose((0, 2, 1, 3, 4)).reshape(H*2, W*2, C//4)
         logdet = 0
         return x, logdet
 

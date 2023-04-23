@@ -37,16 +37,18 @@ import sibylla.Norm_Flows.uniform_base_flow_config as uniform_base_flow_config
 import different_mask_flow_uniform_config as different_mask_flow_uniform_config
 import simple_flow_uniform_config as simple_flow_uniform_config
 import random_mask_flow_uniform_config as random_mask_flow_uniform_config
+import multi_scale_flow_config
 from LearningCurve import LearningCurve
 
 Array = chex.Array
 Numeric = Union[Array, float]
 
-flags.DEFINE_enum('flow_model', 'simple_flow_uniform',
+flags.DEFINE_enum('flow_model', 'multi_scale_flow',
                   ['uniform_base_flow',
                    'different_mask_flow',
                    'random_mask_flow',
-                   'simple_flow_uniform'], 'Flow to train')
+                   'simple_flow_uniform',
+                   'multi_scale_flow'], 'Flow to train')
 flags.DEFINE_enum('dataset', 'MNIST',
                   ['MNIST'], 'Dataset to train')
 flags.DEFINE_integer('num_iterations', int(2e3), 'Number of training steps.')
@@ -71,6 +73,8 @@ def main(_):
         config = random_mask_flow_uniform_config.get_config(FLAGS.dataset)
     elif FLAGS.flow_model == "simple_flow_uniform":
         config = simple_flow_uniform_config.get_config(FLAGS.dataset)
+    elif FLAGS.flow_model == "multi_scale_flow":
+        config = multi_scale_flow_config.get_config(FLAGS.dataset)
     else:
         raise KeyError(f'{FLAGS.flow_model} is not implemented!')
 

@@ -54,11 +54,12 @@ def make_flow_model(event_shape: Sequence[int],
     checkerboard_mask = jnp.reshape(checkerboard_mask, event_shape)
     checkerboard_mask = checkerboard_mask.astype(bool)
 
-    channels_in = 4
     channel_mask = jnp.concatenate([
-                jnp.ones((channels_in//2,)),
-                jnp.zeros((channels_in-channels_in//2,))
-    ])
+                jnp.ones((event_shape[0]//2, event_shape[1]//2, 1)),
+                jnp.zeros((event_shape[0]//2, event_shape[1]//2, 1))
+    ], axis=2)
+    channel_mask = channel_mask.repeat(int(event_shape[2]*2),axis=2)
+    channel_mask = channel_mask.astype(bool)
 
     def bijector_fn(params: Array):
         return distrax.RationalQuadraticSpline(
@@ -81,9 +82,11 @@ def make_flow_model(event_shape: Sequence[int],
                                          num_bijector_params))
         layers.append(layer)
         # Flip the mask after each layer.
-        mask = jnp.logical_not(mask)
+        checkerboard_mask = jnp.logical_not(checkerboard_mask)
 
-    layers.append(Squeeze())
+    assert isinstance(event_shape, tuple)
+    layers.append(Squeeze(layer._event_ndims_out, layer._event_ndims_out))
+    event_shape = (event_shape[0]//2, event_shape[1]//2, event_shape[2]*4)
 
     # next two use channel mask
     for _ in range(2):
@@ -94,7 +97,7 @@ def make_flow_model(event_shape: Sequence[int],
                                          num_bijector_params))
         layers.append(layer)
         # Flip the mask after each layer.
-        mask = jnp.logical_not(mask)
+        channel_mask = jnp.logical_not(channel_mask)
 
 
 

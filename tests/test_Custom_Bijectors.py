@@ -10,10 +10,10 @@ from sibylla.Norm_Flows import Squeeze, IgnorantMaskedCoupling
 
 class TestSqueeze():
     def test_constructor(self):
-        Squeeze()
+        Squeeze(4,4)
     
     def test_forward_simple(self):
-        bijec = Squeeze()
+        bijec = Squeeze(4,4)
 
         x = np.arange(1.,17).reshape(1, 4, 4, 1)
 
@@ -36,7 +36,7 @@ class TestSqueeze():
         assert (y == true).all()
 
     def test_forward_block(self):
-        bijec = Squeeze()
+        bijec = Squeeze(4,4)
 
         # same as test_forward_simple but with a block size of 5
         n_repeats = 5
@@ -74,7 +74,7 @@ class TestSqueeze():
                           [[ 6, 8],
                            [14,16]]]]).transpose(0,2,3,1)
         
-        x,ldet = Squeeze().inverse_and_log_det(y)
+        x,ldet = Squeeze(4,4).inverse_and_log_det(y)
 
         assert true.shape == (1,4,4,1)
 
@@ -99,7 +99,7 @@ class TestSqueeze():
                            [14,16]]]]).transpose(0,2,3,1)
         y = y.repeat(n_repeats, 0)
 
-        x,ldet = Squeeze().inverse_and_log_det(y)
+        x,ldet = Squeeze(4,4).inverse_and_log_det(y)
 
         assert true.shape == (n_repeats,4,4,1)
 
@@ -113,7 +113,7 @@ class TestSqueeze():
         prng = jax.random.PRNGKey(0)
         x = jax.random.randint(prng, (4,10,8,3), 0, 256)
 
-        bij = Squeeze()
+        bij = Squeeze(4,4)
 
         y = bij.forward(x)
         x_new = bij.inverse(y)
