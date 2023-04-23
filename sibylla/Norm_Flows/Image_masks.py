@@ -44,3 +44,22 @@ if __name__ == '__main__':
     # CheckboardMask((14,14,4)).visualise()
     ChannelMask((14,14,4)).visualise()
     plt.show()
+
+    event_shape = (28,28,1)
+    mask = np.arange(0, onp.prod(event_shape)) % 2
+    mask = np.reshape(mask, event_shape)
+    mask = mask.astype(bool)
+
+    plt.figure()
+    ImageMask(mask_array=mask).visualise()
+    plt.show()
+
+
+    event_shape = (28,28,1)
+    mask = np.arange(0, np.prod(np.array(event_shape))) % 2
+    mask = np.reshape(mask, event_shape)
+    mask = mask.astype(bool)
+
+    plt.figure()
+    ImageMask(mask_array=mask).visualise()
+    plt.show()

@@ -77,12 +77,12 @@ class IgnorantMaskedCoupling(base.Bijector):
                  event_ndims: Optional[int] = None,
                  inner_event_ndims: int = 0):
         
-        if np.logical_or(coupling_mask, ignorance_mask).any():
-            raise ValueError('The masks must have no overlap')
+        # this breaks the jit tracer...
+        # if np.logical_and(coupling_mask, ignorance_mask).any():
+        #     raise ValueError('The masks must have no overlap')
         
-        if coupling_mask.shape != ignorance_mask.shape:
-            raise ValueError(f'Coupling mask and ignorance mask must have same shape, got {coupling_mask.shape}, {ignorance_mask.shape}')
-
+        # if coupling_mask.shape != ignorance_mask.shape:
+        #     raise ValueError(f'Coupling mask and ignorance mask must have same shape, got {coupling_mask.shape}, {ignorance_mask.shape}')
 
         if ignorance_mask.dtype != bool:
             raise ValueError(f'`ignorance_mask` must have values of type `bool`; got values of'

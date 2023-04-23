@@ -23,7 +23,7 @@ import haiku as hk
 import numpy as np
 import distrax
 from sibylla.Norm_Flows import Squeeze, IgnorantMaskedCoupling
-from Image_masks import CheckboardMask, ChannelMask
+from Image_masks import ImageMask, CheckboardMask, ChannelMask
 
 Array = jnp.ndarray
 
@@ -72,7 +72,7 @@ def make_flow_model(event_shape: Sequence[int],
 
     layers = []
     # first quarter of the layers are normal dense masked coupling
-    for _ in range(2):
+    for _ in range(5):
         layer = IgnorantMaskedCoupling(
             coupling_mask=checkerboard_mask,
             ignorance_mask=ignorance_mask,
@@ -80,24 +80,28 @@ def make_flow_model(event_shape: Sequence[int],
             conditioner=make_conditioner(event_shape, hidden_sizes,
                                          num_bijector_params))
         layers.append(layer)
-        # Flip the mask after each layer.
+        # Flip the coupling mask after each layer.
         checkerboard_mask = jnp.logical_not(checkerboard_mask)
 
-    # assert isinstance(event_shape, tuple)
-    # layers.append(Squeeze(layer._event_ndims_out, layer._event_ndims_out))
-    # event_shape = (event_shape[0]//2, event_shape[1]//2, event_shape[2]*4)
+    # now we pretend we have split and change the masks
+    # ignorance mask is all the columns
 
-    # next two use channel mask
-    # for _ in range(2):
-    #     layer = distrax.MaskedCoupling(
-    #         mask=channel_mask,
-    #         bijector=bijector_fn,
-    #         conditioner=make_conditioner(event_shape, hidden_sizes,
-    #                                      num_bijector_params))
-    #     layers.append(layer)
-    #     # Flip the mask after each layer.
-    #     channel_mask = jnp.logical_not(channel_mask)
+    mask = jnp.arange(0, np.prod(np.array(event_shape))) % 2
+    mask = jnp.reshape(mask, event_shape)
+    mask = mask.astype(bool)
+    ignorance_mask = mask # stays fixed
 
+    for _ in range(5):
+        coupling_mask = checkerboard_mask*jnp.logical_not(ignorance_mask)
+        layer = IgnorantMaskedCoupling(
+            coupling_mask=coupling_mask,
+            ignorance_mask=ignorance_mask,
+            bijector=bijector_fn,
+            conditioner=make_conditioner(event_shape, hidden_sizes,
+                                         num_bijector_params))
+        layers.append(layer)
+        # Flip the coupling mask after each layer.
+        checkerboard_mask = jnp.logical_not(checkerboard_mask)
 
 
     # We invert the flow so that the `forward` method is called with `log_prob`.
@@ -129,7 +133,7 @@ def get_config(dataset_name : str) -> config_dict.ConfigDict:
         raise NotImplementedError("dataset not found")
 
     config = config_dict.ConfigDict()
-    config.model_name = "multiscale_flow" + dataset_name
+    config.model_name = "multi_scale_flow" + dataset_name
     config.data_shape = data_shape
     config.model = dict(
         constructor=make_flow_model,
@@ -142,7 +146,7 @@ def get_config(dataset_name : str) -> config_dict.ConfigDict:
     )
     config.train = dict(
         batch_size=128,
-        learning_rate=1e-4,
+        learning_rate=1e-3,
         # learning_rate_decay_steps=[250000, 500000],
         # learning_rate_decay_factor=0.1,
         seed=42,
