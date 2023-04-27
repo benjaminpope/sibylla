@@ -51,7 +51,7 @@ flags.DEFINE_enum('flow_model', 'multi_scale_flow',
                    'multi_scale_flow'], 'Flow to train')
 flags.DEFINE_enum('dataset', 'MNIST',
                   ['MNIST'], 'Dataset to train')
-flags.DEFINE_integer('num_iterations', int(1e3), 'Number of training steps.')
+flags.DEFINE_integer('num_iterations', int(4e3), 'Number of training steps.')
 
 FLAGS = flags.FLAGS
 
