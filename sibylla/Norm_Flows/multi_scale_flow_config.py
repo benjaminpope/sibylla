@@ -32,6 +32,7 @@ def make_conditioner(event_shape: Sequence[int],
                      hidden_sizes: Sequence[int],
                      num_bijector_params: int) -> hk.Sequential:
     """Creates an MLP conditioner for each layer of the flow."""
+    # print(np.prod(event_shape) * num_bijector_params)
     return hk.Sequential([
         hk.Flatten(preserve_dims=-len(event_shape)),
         hk.nets.MLP(hidden_sizes, activate_final=True),
@@ -47,7 +48,8 @@ def make_conditioner(event_shape: Sequence[int],
 
 def make_flow_model(event_shape: Sequence[int],
                     num_layers: int,
-                    hidden_sizes: Sequence[int],
+                    hidden_sizes_early: Sequence[int],
+                    hidden_sizes_late: Sequence[int],
                     num_bins: int) -> distrax.Transformed:
     """Creates the flow model."""
     x, y = np.arange(event_shape[0], dtype=np.int32), np.arange(event_shape[1], dtype=np.int32)
@@ -72,12 +74,12 @@ def make_flow_model(event_shape: Sequence[int],
 
     layers = []
     # first quarter of the layers are normal dense masked coupling
-    for _ in range(5):
+    for _ in range(4):
         layer = IgnorantMaskedCoupling(
             coupling_mask=checkerboard_mask,
             ignorance_mask=ignorance_mask,
             bijector=bijector_fn,
-            conditioner=make_conditioner(event_shape, hidden_sizes,
+            conditioner=make_conditioner(event_shape, hidden_sizes_early,
                                          num_bijector_params))
         layers.append(layer)
         # Flip the coupling mask after each layer.
@@ -91,13 +93,13 @@ def make_flow_model(event_shape: Sequence[int],
     mask = mask.astype(bool)
     ignorance_mask = mask # stays fixed
 
-    for _ in range(5):
+    for _ in range(4):
         coupling_mask = checkerboard_mask*jnp.logical_not(ignorance_mask)
         layer = IgnorantMaskedCoupling(
             coupling_mask=coupling_mask,
             ignorance_mask=ignorance_mask,
             bijector=bijector_fn,
-            conditioner=make_conditioner(event_shape, hidden_sizes,
+            conditioner=make_conditioner(event_shape, hidden_sizes_late,
                                          num_bijector_params))
         layers.append(layer)
         # Flip the coupling mask after each layer.
@@ -125,7 +127,7 @@ def get_config(dataset_name : str) -> config_dict.ConfigDict:
 
     """
 
-    n_bins = 8
+    n_bins = 3
 
     if dataset_name == "MNIST":
         data_shape = (28, 28, 1)
@@ -140,21 +142,22 @@ def get_config(dataset_name : str) -> config_dict.ConfigDict:
         kwargs=dict(
             event_shape=data_shape,
             num_layers=12,
-            hidden_sizes=[400,300,100],
+            hidden_sizes_early=[800,1600,3000],
+            hidden_sizes_late=[500,1000,2000],
             num_bins=n_bins
         )
     )
     config.train = dict(
-        batch_size=128,
+        batch_size=256,
         learning_rate=1e-3,
         # learning_rate_decay_steps=[250000, 500000],
         # learning_rate_decay_factor=0.1,
-        seed=42,
+        seed=21,
         max_gradient_norm=10000.,
     )
     config.eval = dict(
         eval_every=10,
-        batch_size=128,
+        batch_size=256,
         save_on_eval=True,
     )
     return config

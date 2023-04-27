@@ -129,6 +129,7 @@ def main(_):
 
     img = ImageDataset.normalize_dequant_data(next(eval_ds), next(prng_seq))[0]
     evaluator.display_fwd_inv(img)
+    evaluator.display_fwd_inv(jax.random.uniform(next(prng_seq), img.shape))
     
     dict_of_ds = {
         'train' : train_ds, 
