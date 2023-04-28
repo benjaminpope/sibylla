@@ -109,7 +109,46 @@ class FlowEvaluator:
             arr = arr[jnp.isfinite(arr)]
         return arr
 
-    def display_fwd_inv(self, img):
+    def display_small_scale_var(self, base_img, n_imgs = 5):
+        """
+        for the multiscale model, run the generative direction several times, varying only the elements of the input that are masked
+        in the ignorance layers
+        """
+        # encode the base image
+        base_img_z = NormFlow.get_inverse_model(self.config).apply(self.params, base_img)
+
+        event_shape = self.config.data_shape
+
+        mask = jnp.arange(0, np.prod(np.array(event_shape))) % 2
+        mask = jnp.reshape(mask, event_shape)
+        mask = mask.astype(bool)
+        ignorance_mask = mask
+
+
+        forward_model = NormFlow.get_forward_model(self.config)
+
+        plt.figure()
+        imshow_args = {
+             'vmin' : 0, 
+             'vmax' : 1,
+             'cmap' : 'gray'
+        }
+
+        plt.subplot(1,n_imgs+1, 1)
+        plt.imshow(forward_model.apply(self.params, base_img_z), **imshow_args)
+        plt.title('Starting img')
+        
+        base_distribution = NormFlow.get_base_distribution(self.config).apply(self.params)
+        new_random_draws = base_distribution._sample_n(0, n_imgs)
+        for i in range(n_imgs):
+            new_z = np.where(ignorance_mask, base_img_z, new_random_draws[i])
+            fwd = forward_model.apply(self.params, new_z)
+            plt.subplot(1,n_imgs+1, i+2)
+            plt.imshow(fwd, **imshow_args)
+
+        self.finish_plot('display_multiscale')
+
+    def display_fwd_inv(self, img, save_name = ''):
         forward_model = NormFlow.get_forward_model(self.config)
         inverse_model = NormFlow.get_inverse_model(self.config)
 
@@ -132,7 +171,7 @@ class FlowEvaluator:
         plt.subplot(133)
         plt.imshow(inv, **imshow_args)
         plt.title('Inverse( image )')
-        self.finish_plot('display_fwd_inv')
+        self.finish_plot('display_fwd_inv' + save_name)
 
     def show_img_grid(imgs, row_size=4):
         """

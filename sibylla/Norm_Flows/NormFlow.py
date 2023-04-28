@@ -68,6 +68,17 @@ class NormFlow:
 
         return forward_model
 
+    def get_base_distribution(config):
+        create_model = NormFlow.get_create_model(config)
+
+        @hk.without_apply_rng
+        @hk.transform
+        def _base_distribution():
+            model = create_model()
+            return model.distribution
+
+        return _base_distribution
+
     def get_eval_fn(config):
         log_prob = NormFlow.get_log_prob(config)
 

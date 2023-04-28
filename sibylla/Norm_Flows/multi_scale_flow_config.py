@@ -74,7 +74,7 @@ def make_flow_model(event_shape: Sequence[int],
 
     layers = []
     # first quarter of the layers are normal dense masked coupling
-    for _ in range(6):
+    for _ in range(4):
         layer = IgnorantMaskedCoupling(
             coupling_mask=checkerboard_mask,
             ignorance_mask=ignorance_mask,
@@ -93,7 +93,7 @@ def make_flow_model(event_shape: Sequence[int],
     mask = mask.astype(bool)
     ignorance_mask = mask # stays fixed
 
-    for _ in range(6):
+    for _ in range(4):
         coupling_mask = checkerboard_mask*jnp.logical_not(ignorance_mask)
         layer = IgnorantMaskedCoupling(
             coupling_mask=coupling_mask,
@@ -127,7 +127,7 @@ def get_config(dataset_name : str) -> config_dict.ConfigDict:
 
     """
 
-    n_bins = 4
+    n_bins = 3
 
     if dataset_name == "MNIST":
         data_shape = (28, 28, 1)
@@ -142,8 +142,8 @@ def get_config(dataset_name : str) -> config_dict.ConfigDict:
         kwargs=dict(
             event_shape=data_shape,
             num_layers=12,
-            hidden_sizes_early=[1000,2000,3500],
-            hidden_sizes_late=[600,1200,2500],
+            hidden_sizes_early=[800, 1600, 3000],
+            hidden_sizes_late=[500, 1000, 2000],
             num_bins=n_bins
         )
     )

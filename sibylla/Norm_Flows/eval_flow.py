@@ -29,7 +29,7 @@ jax.random.PRNGKey(4)
 Array = chex.Array
 Numeric = Union[Array, float]
 
-flags.DEFINE_integer('version', -1, 'which version of the model to use')
+flags.DEFINE_integer('version', 8, 'which version of the model to use')
 flags.DEFINE_enum('flow_model', 'multi_scale_flow',
                   ['uniform_base_flow','different_mask_flow','random_mask_flow','multi_scale_flow'], 'Flow to eval')
 flags.DEFINE_enum('dataset', 'MNIST',
@@ -127,16 +127,18 @@ def main(_):
 
     evaluator = FlowEvaluator(config, version=FLAGS.version, show_plots=True, save_plots=True)
 
-    img = ImageDataset.normalize_dequant_data(next(eval_ds), next(prng_seq))[0]
-    evaluator.display_fwd_inv(img)
-    evaluator.display_fwd_inv(jax.random.uniform(next(prng_seq), img.shape))
+    img = ImageDataset.normalize_dequant_data(next(eval_ds), next(prng_seq))[2]
+    # evaluator.display_fwd_inv(img, 'img')
+    # evaluator.display_fwd_inv(jax.random.uniform(next(prng_seq), img.shape), 'noise')
     
-    dict_of_ds = {
-        'train' : train_ds, 
-        'eval' : eval_ds,
-        'emnist' : etrain_ds
-    }
-    evaluator.show_encoded_hist(dict_of_ds, prng_seq, n_imgs=256)
+    evaluator.display_small_scale_var(img, 5)
+
+    # dict_of_ds = {
+    #     'train' : train_ds, 
+    #     'eval' : eval_ds,
+    #     'emnist' : etrain_ds
+    # }
+    # evaluator.show_encoded_hist(dict_of_ds, prng_seq, n_imgs=256)
 
 
     exit()
