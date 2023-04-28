@@ -6,7 +6,7 @@ import haiku as hk
 import jax.numpy as np
 from typing import Mapping
 import jax
-from ImageDataset import ImageDataset
+from sibylla.Norm_Flows.ImageDataset import ImageDataset
 
 Array = np.ndarray
 PRNGKey = Array

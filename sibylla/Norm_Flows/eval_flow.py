@@ -127,11 +127,14 @@ def main(_):
 
     evaluator = FlowEvaluator(config, version=FLAGS.version, show_plots=True, save_plots=True)
 
-    img = ImageDataset.normalize_dequant_data(next(eval_ds), next(prng_seq))[2]
+    img_batch = ImageDataset.normalize_dequant_data(next(eval_ds), next(prng_seq))
+    img = img_batch[2]
     # evaluator.display_fwd_inv(img, 'img')
     # evaluator.display_fwd_inv(jax.random.uniform(next(prng_seq), img.shape), 'noise')
     
-    evaluator.display_small_scale_var(img, 5)
+    print(evaluator.bits_per_dim(img_batch))
+
+    # evaluator.display_small_scale_var(img, 5)
 
     # dict_of_ds = {
     #     'train' : train_ds, 

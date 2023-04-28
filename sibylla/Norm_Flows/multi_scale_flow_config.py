@@ -23,7 +23,7 @@ import haiku as hk
 import numpy as np
 import distrax
 from sibylla.Norm_Flows import Squeeze, IgnorantMaskedCoupling
-from Image_masks import ImageMask, CheckboardMask, ChannelMask
+from sibylla.Norm_Flows.Image_masks import ImageMask, CheckboardMask, ChannelMask
 
 Array = jnp.ndarray
 

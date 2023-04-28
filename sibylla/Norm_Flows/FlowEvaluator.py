@@ -173,6 +173,17 @@ class FlowEvaluator:
         plt.title('Inverse( image )')
         self.finish_plot('display_fwd_inv' + save_name)
 
+    def bits_per_dim(self, img_batch):
+        """
+        return the image
+        """
+        log_prob = NormFlow.get_log_prob(self.config)
+
+        return np.mean(log_prob.apply(self.params, img_batch)) * np.log2(np.exp(1)) / np.prod(img_batch.shape[1:])
+
+    def get_num_params(self):
+        return sum([np.prod(p.shape) for p in jax.tree_util.tree_leaves(self.params)])
+
     def show_img_grid(imgs, row_size=4):
         """
         class helper method to show images in a compact grid
