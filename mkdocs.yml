@@ -9,8 +9,6 @@ markdown_extensions:
 
 extra_javascript:
   - javascripts/mathjax.js
-  - https://polyfill.io/v3/polyfill.min.js?features=es6
-  - https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js
 
 site_name: sibylla - gradient descent image reconstruction
 repo_url: https://github.com/benjaminpope/sibylla
